@@ -231,3 +231,9 @@
 - **Alternative tested:** Rules run as Lakeflow expectations; failure counts visible in the pipeline data-quality tab.
 - **Limitation:** Clean meters do not prove correct payout settings; that needs the luck test (P2) and inspection.
 - **Confidence:** high (from p1)
+
+## Checks performed
+
+- **Luck percentile basis (10,000 replays).** `p2_luck_scores` was built from 10,000 fair replays per machine in Databricks. Verified in Databricks by the analyst and replicated here on the exported table: 276 of 310 luck scores need four decimal places and all 310 are multiples of 1/10,000, which cannot happen with 1,000 replays. Limitation: this shows the precision is at least 1/10,000; it does not show how the replays were drawn. The exported `p2_luck_sims` is a 500-per-machine sample used only for the Machine Details chart.
+- **Independent forecast check.** A weekday-average forecast built separately in the dashboard code misses by $68,699 a day on May and June; the team's `weekday_average` row says $68,699.
+- **Comp cost totals.** The team's `p1_comps` totals $190,669; the dashboard's own build from the player table totals $190,669.

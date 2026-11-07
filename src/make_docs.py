@@ -78,6 +78,22 @@ for q, g in c.groupby("question", sort=False):
         E += [f"### {r.claim_id}: {r.claim}", "", f"- **Evidence table:** {r.evidence_table}", f"- **Result:** {r.result}",
               f"- **Alternative tested:** {r.alternative_tested}", f"- **Limitation:** {r.limitation}",
               f"- **Confidence:** {r.confidence} (from {r.source})", ""]
+# ---- checks performed (computed from the data files, not typed)
+import numpy as np
+
+ls = pd.read_parquet(ROOT / "app_data" / "team" / "p2_luck_scores.parquet").luck_score.dropna()
+k4 = np.isclose(ls * 10000, np.round(ls * 10000))
+k3 = np.isclose(ls * 1000, np.round(ls * 1000))
+MIN = json.loads((ROOT / "app_data" / "findings" / "minimum.json").read_text())
+mw = next(m for m in T["model"]["metrics"] if m["model_name"] == "weekday_average")
+E += ["## Checks performed", "",
+      f"- **Luck percentile basis (10,000 replays).** `p2_luck_scores` was built from 10,000 fair replays per machine in Databricks. Verified in Databricks by the "
+      f"analyst and replicated here on the exported table: {int((k4 & ~k3).sum())} of {len(ls)} luck scores need four decimal places and all {int(k4.sum())} are multiples of 1/10,000, "
+      f"which cannot happen with 1,000 replays. Limitation: this shows the precision is at least 1/10,000; it does not show how the replays were drawn. "
+      f"The exported `p2_luck_sims` is a 500-per-machine sample used only for the Machine Details chart.",
+      f"- **Independent forecast check.** A weekday-average forecast built separately in the dashboard code misses by {usd(MIN['model']['mae_model_usd'])} a day on May and June; "
+      f"the team's `weekday_average` row says {usd(mw['mae_usd'])}.",
+      f"- **Comp cost totals.** The team's `p1_comps` totals {usd(T['comps']['comp_cost_usd'])}; the dashboard's own build from the player table totals {usd(MIN['q5']['comp_cost_usd'])}.", ""]
 (DOCS / "evidence.md").write_text("\n".join(E), encoding="utf8")
 print(f"docs/evidence.md: {len(c)} claims")
 
