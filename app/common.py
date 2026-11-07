@@ -48,7 +48,11 @@ def scope_label(sel: dict) -> str:
 
 import sys
 sys.path.insert(0, str(ROOT / "src"))
-from validate_contracts import CONTRACT_STEMS as _STEMS, check as _check, meta_path as _meta_path  # noqa: E402
+import importlib  # noqa: E402
+import validate_contracts as _vc  # noqa: E402
+
+importlib.reload(_vc)  # Streamlit Cloud can keep a stale copy of this module in sys.modules across deploys
+_STEMS, _check, _meta_path = _vc.CONTRACT_STEMS, _vc.check, _vc.meta_path
 
 
 def load(name: str):

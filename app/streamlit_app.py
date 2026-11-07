@@ -1,9 +1,15 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+import importlib
 import streamlit as st
-from common import sidebar, header, footer
-import pages
+
+# Reload our own modules on every run: a long-lived server process can otherwise keep stale versions after a deploy.
+for _m in ("validate_contracts", "common", "pages"):
+    importlib.reload(importlib.import_module(_m))
+from common import sidebar, header, footer  # noqa: E402
+import pages  # noqa: E402
 
 st.set_page_config(page_title="The Gilded Ace - Decision Room", layout="wide")
 
