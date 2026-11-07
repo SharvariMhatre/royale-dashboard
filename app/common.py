@@ -162,16 +162,23 @@ def usd(x) -> str:
 
 
 def _fmt(s: pd.Series, kind: str) -> pd.Series:
-    f = {"usd": usd, "pct": lambda x: f"{x:.0%}", "pct1": lambda x: f"{x:.1%}", "int": lambda x: f"{int(x):,}",
+    f = {"usd": usd, "usd_nf": usd, "pct_nf": lambda x: f"{x:.0%}", "pct": lambda x: f"{x:.0%}", "pct1": lambda x: f"{x:.1%}", "int": lambda x: f"{int(x):,}",
          "num": lambda x: f"{x:,.1f}", "pct2": lambda x: f"{x:.2%}", "month": lambda x: f"{pd.Timestamp(str(x) + '-01'):%b %Y}", "yesno": lambda x: "Yes" if x else "No",
          "date": lambda x: f"{pd.Timestamp(x):%b} {pd.Timestamp(x).day}", "text": str}[kind]
-    return s.map(lambda x: "" if (x is None or (not isinstance(x, (list, str)) and pd.isna(x))) else f(x))
+    blank = NOT_ON_FLOOR if kind.endswith("_nf") else ""  # machines absent from the selected period read 'Not on floor', not blank
+    return s.map(lambda x: blank if (x is None or (not isinstance(x, (list, str)) and pd.isna(x))) else f(x))
 
 
-def show(df: pd.DataFrame, spec: dict):
+NOT_ON_FLOOR = "Not on floor in this period"
+
+
+def show(df: pd.DataFrame, spec: dict, wrap: bool = False):
     """Display a table for a manager: spec = {column: (plain-English name, kind)}; kinds: usd pct pct1 int num yesno date text."""
     out = pd.DataFrame({lab: _fmt(df[c], k) for c, (lab, k) in spec.items() if c in df.columns})
-    st.dataframe(out, hide_index=True, width="stretch")
+    if wrap:  # st.table wraps long text fully (st.dataframe truncates cells); sorting is not needed for these short tables
+        st.table(out.reset_index(drop=True).style.hide(axis="index"))
+    else:
+        st.dataframe(out, hide_index=True, width="stretch")
 
 
 # ---------- team files, team findings, evidence ----------
@@ -210,4 +217,4 @@ def evidence(questions: list[str], machine: str | None = None, title: str = "Evi
     with st.expander(f"{title} ({len(c)})", expanded=expanded):
         show(c, {"claim_id": ("ID", "text"), "claim": ("Claim", "text"), "result": ("Result", "text"),
                  "alternative_tested": ("Alternative explanation tested", "text"), "limitation": ("Limitation", "text"),
-                 "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")})
+                 "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")}, wrap=True)

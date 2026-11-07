@@ -61,10 +61,10 @@ def _overview_min(sel):
         b = b[["machine_id", "zone_id", "config_id", "days_on_floor", "zone_index", "config_index", "occupancy_vs_zone", "label",
                "label_reason"]].merge(t, on="machine_id", how="left")
     show(b, {"machine_id": ("Machine", "text"), "zone_id": ("Zone", "text"), "config_id": ("Game type", "text"),
-             "days_on_floor": ("Days on floor (all 6 months)", "int"), "house_win_usd": ("Casino win, selected period", "usd"),
-             "luck_residual_usd": ("Win vs expected (luck), selected period", "usd"),
-             "availability": ("Time available, selected period", "pct"),
-             "theo_per_avail_hour": ("Expected win per hour available, selected period", "usd"),
+             "days_on_floor": ("Days on floor (all 6 months)", "int"), "house_win_usd": ("Casino win, selected period", "usd_nf"),
+             "luck_residual_usd": ("Win vs expected (luck), selected period", "usd_nf"),
+             "availability": ("Time available, selected period", "pct_nf"),
+             "theo_per_avail_hour": ("Expected win per hour available, selected period", "usd_nf"),
              "zone_index": ("Zone earnings vs typical zone", "pct"), "config_index": ("Earnings vs same game elsewhere", "pct"),
              "occupancy_vs_zone": ("Seats used vs zone", "pct"), "label": ("Likely cause", "text"), "label_reason": ("Why", "text")})
     if not full_scope:
@@ -120,7 +120,7 @@ def _details_min(sel):
         st.line_chart(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), color=[ORANGE, BLUE],
                       x_label="Week starting", y_label="Dollars per week")
     else:
-        st.info("This machine has no active days in the selected period/bank.")
+        st.info("Not on floor in this period.")
     st.caption("Verdict wording is minimum-version rules; 'not enough evidence' (Mixed) is an allowed answer. Peer comparison "
                "uses same-config machines (leave-one-out median); no confidence interval yet.")
     source("min_q1.parquet + min_machine_day.parquet", SCRIPT, "labels: Full (Jan-Jun); chart: " + sel["preset"])
@@ -305,13 +305,12 @@ def overview(sel):
         zn = {z["zone_name"]: z for z in (tfind("zones") or [])}
         top = tv["gm10_top_zone"]
         parts = ", ".join(f"{n} {k.lower()}" for k, n in sorted(tv["gm10"].items(), key=lambda kv: -kv[1]))
-        s2 = f"{tv['gm10_in_b40']} of the {tv['gm10_n']} sit in {top}"
+        s2 = f"{tv['gm10_in_b40']} sit in {top}"
         if top in zn:
-            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the typical zone per available hour"
+            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the typical zone"
         if dn:
-            s2 += f", and downtime explains little ({usd(dn['lost_theo_usd'])} of expected win, {dn['share_of_scheduled']:.2%} of scheduled hours)"
-        st.info(f"**Answer in brief.** {tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}. "
-                f"{s2}, so swapping machines is unlikely to fix the list; you have $100,000 across at most 3 action types, and keeping the money is allowed.")
+            s2 += f"; downtime explains little ({dn['share_of_scheduled']:.2%} of hours)"
+        st.info("**Answer in brief.**\n\n" + f"{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}.\n\n" + f"{s2}.")
         st.markdown("**The GM's list:** the 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025, with the team's verdicts. "
                     "A low total can come from luck, location or a leak; each row tests all three.")
         g = v[v.in_manager_bottom10].sort_values("manager_rank").copy()
@@ -324,10 +323,11 @@ def overview(sel):
         else:
             g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct
         show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
-                 "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd"),
-                 "avail_sel": ("Time available, selected period", "pct"), "verdict": ("Verdict (full period)", "text"),
-                 "luck_score": ("Chance luck alone explains it", "pct"), "confidence": ("Confidence", "text"),
-                 "reason": ("Why", "text")})
+                 "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd_nf"),
+                 "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "text"),
+                 "luck_score": ("Luck percentile", "pct"), "reason": ("Why", "text"),
+                 "confidence": ("Confidence", "text")}, wrap=True)
+        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck.")
         if not full_scope:
             st.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
                     "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
@@ -349,7 +349,7 @@ def overview(sel):
         if sel["bank"] != ALL:
             with st.expander(f"Machines in bank {sel['bank']} ({len(vv)})", expanded=True):
                 show(vv.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
-                     "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Chance luck alone explains it", "pct"),
+                     "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Luck percentile", "pct"),
                      "in_manager_bottom10": ("In the GM's 10", "yesno")})
         _zone_evidence()
     evidence(["Q1"], title="Evidence: Q1 claims behind the verdicts")
@@ -439,7 +439,7 @@ def budget_section(sel):
                 ids = [m for tl in chosen[chosen.action_type_id == t].targets for m in re.findall(r"M-\d+", str(tl))]
                 if vv is not None and ids:
                     show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Target machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
-                         "luck_score": ("Chance luck alone explains it", "pct"), "reason": ("Why", "text")})
+                         "luck_score": ("Luck percentile", "pct"), "reason": ("Why", "text")}, wrap=True)
                 evidence(EVID_Q.get(t, ["Q1"]), title=f"Evidence for {nm}", expanded=True)
             pb = budget.payback(chosen)
             if pb.empty and (props.action_type_id.isin(budget.PERMANENT)).any():
@@ -473,7 +473,7 @@ def details(sel):
     if sel["bank"] != ALL:
         st.markdown(f"**Bank {sel['bank']}: {len(vb)} machines** (change the bank in the sidebar)")
         show(vb.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
-             "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Chance luck alone explains it", "pct")})
+             "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Luck percentile", "pct")})
     order = pd.concat([vb[vb.in_manager_bottom10].sort_values("manager_rank"), vb[~vb.in_manager_bottom10].sort_values("machine_id")])
     names = dict(zip(order.machine_id, order.machine_id + "  -  " + order.verdict + (np_where(order) )))
     mid = st.selectbox("Machine (the GM's 10 first)", list(order.machine_id), format_func=lambda m: names[m])
@@ -484,7 +484,7 @@ def details(sel):
     c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
     c[1].metric("Expected win", usd(r.theo_usd))
     c[2].metric("Days on floor", f"{int(r.days_on_floor)}")
-    c[3].metric("Chance luck alone explains it", f"{r.luck_score:.0%}")
+    c[3].metric("Luck percentile", f"{r.luck_score:.0%}")
     st.markdown("**Competing explanations tested** (full period)")
     peer = r.theo_per_hour_usd / r.peer_theo_per_hour_usd if r.peer_theo_per_hour_usd else float("nan")
     avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # p2 file stores a fraction
@@ -731,5 +731,5 @@ def evidence_page(sel):
     st.subheader(f"{len(x)} claims. Each lists the alternative explanation that was tested and its limitation.")
     show(x, {"claim_id": ("ID", "text"), "question": ("Question", "text"), "claim": ("Claim", "text"), "result": ("Result", "text"),
              "alternative_tested": ("Alternative explanation tested", "text"), "limitation": ("Limitation", "text"),
-             "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")})
+             "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")}, wrap=True)
     source("team/all_claims.parquet", "src/integrate_team.py (merge of p1/p2/p3_claims)", "all questions")
