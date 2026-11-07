@@ -6,10 +6,10 @@
    "Unlucky": 1
   },
   "labels_all": {
-   "Unlucky": 125,
-   "Mixed": 114,
+   "Mixed": 188,
+   "Game setting": 59,
    "Location": 48,
-   "Game setting": 22,
+   "Unlucky": 14,
    "Truly bad lead": 1
   },
   "thresholds": {
@@ -18,10 +18,35 @@
    "config_ok": 0.9,
    "config_low": 0.8,
    "zone_low": 0.85,
+   "luck_big": 0.2,
    "occupancy_ok": 0.85,
    "by_design_floor_index": 0.85
   },
   "bottom10_house_win_usd": 232392.0,
+  "unlucky_label_count_all": 14,
+  "luck_big_share_of_theo": 0.2,
+  "zone_story": {
+   "zone": "Z-B40",
+   "theo_gap_vs_same_games_elsewhere_min": 0.348,
+   "theo_gap_vs_same_games_elsewhere_max": 0.48,
+   "configs_compared": [
+    "G-CLS93",
+    "G-HIGH92",
+    "G-JKP88",
+    "G-LOW92",
+    "G-NEO88",
+    "G-PEN89",
+    "G-STD90",
+    "G-VID95"
+   ],
+   "occupancy_in_zone": 0.254,
+   "occupancy_elsewhere": 0.384,
+   "zone_theo_per_avail_hour": 11.69,
+   "other_zones_theo_per_avail_hour": [
+    16.64,
+    21.32
+   ]
+  },
   "scope": "Full (Jan-Jun) 2025, active machine-days only"
  },
  "q2": {
@@ -81,6 +106,29 @@
   "mae_model_usd": 68698.55,
   "mae_baseline_usd": 218258.1,
   "test_days": 61,
+  "weekday_means_train_usd": {
+   "Fri": 1655737.2,
+   "Mon": 1212138.32,
+   "Sat": 1820595.19,
+   "Sun": 1465879.08,
+   "Thu": 1290980.45,
+   "Tue": 1112941.95,
+   "Wed": 1149981.04
+  },
+  "weekday_means_test_for_comparison_usd": {
+   "Fri": 1599430.97,
+   "Mon": 1176449.09,
+   "Sat": 1771457.37,
+   "Sun": 1404215.0,
+   "Thu": 1267238.03,
+   "Tue": 1074894.65,
+   "Wed": 1143332.74
+  },
+  "leak_check": {
+   "train_rows": 120,
+   "train_last_date": "2025-04-30",
+   "test_rows_in_training": 0
+  },
   "beats_baseline": true,
   "decision_affected": "weekday staffing and service coverage (placeholder; Person 3's model replaces it)"
  },
@@ -88,6 +136,6 @@
   "producer": "Sharvari (minimum)",
   "script": "src/minimum.py",
   "data_release": "0.9.0-draft",
-  "generated_at": "2026-11-07 20:56 UTC"
+  "generated_at": "2026-11-07 21:01 UTC"
  }
 }

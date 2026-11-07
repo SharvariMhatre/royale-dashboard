@@ -30,6 +30,7 @@ def save(df, name):
 # ---------------- Q1 ----------------
 MIN_DAYS, AVAIL_LOW = 30, 0.90          # simple rules, stated on the page
 CFG_OK, CFG_LOW, ZONE_LOW, OCC_OK, CFG_BY_DESIGN = 0.90, 0.80, 0.85, 0.85, 0.85
+LUCK_BIG = 0.20  # Unlucky/Luck needs luck residual below -20% of theo
 
 
 def loo_median(m, col, keys, min_n):
@@ -91,7 +92,7 @@ def q1():
             return "Too little data", f"Only {r.days_on_floor} days on the floor."
         if r.availability < AVAIL_LOW:
             return "Broken lead", f"Only {r.availability:.0%} of scheduled hours available."
-        if r.config_index >= CFG_OK and r.luck_residual_usd < 0:
+        if r.config_index >= CFG_OK and r.luck_residual_usd < -LUCK_BIG * r.theo_usd:
             return "Unlucky", (f"Earns {r.config_index:.0%} of same-config machines per available hour, "
                                f"but house win is ${-r.luck_residual_usd:,.0f} below theo.")
         if r.config_index >= CFG_LOW and r.by_design_low and r.occupancy_vs_zone >= OCC_OK:
@@ -102,8 +103,35 @@ def q1():
         if r.config_index < CFG_LOW:
             return "Truly bad lead", f"Earns {r.config_index:.0%} of same-config machines per available hour."
         return "Mixed", f"Config index {r.config_index:.0%}, zone index {r.zone_index:.0%}; no single cause."
+    # second causes: any strong cause other than the primary label (shown on the evidence card)
+    def also(r):
+        c = []
+        if r.luck_residual_usd < -LUCK_BIG * r.theo_usd and r.label != "Unlucky":
+            c.append(f"Luck (-${-r.luck_residual_usd:,.0f} vs theo)")
+        if r.zone_index < ZONE_LOW and r.label != "Location":
+            c.append(f"Location (zone index {r.zone_index:.0%})")
+        if r.config_index < CFG_LOW and r.label != "Truly bad lead":
+            c.append(f"Below same-config peers ({r.config_index:.0%})")
+        if r.availability < AVAIL_LOW and r.label != "Broken lead":
+            c.append(f"Downtime (availability {r.availability:.0%})")
+        return "; ".join(c)
     lab = m.apply(label, axis=1, result_type="expand")
     m["label"], m["label_reason"] = lab[0], lab[1]
+    m["also_strong"] = m.apply(also, axis=1)
+    # zone story for the weakest zone: same games elsewhere, and seat occupancy (occupied/available hours, ratio of sums)
+    wz = zt.idxmin()
+    inz, out = m[m.zone_id == wz], m[m.zone_id != wz]
+    gap = {}
+    for cfg, g in inz.groupby("config_id"):
+        o = out[out.config_id == cfg]
+        if len(o):
+            gap[cfg] = 1 - (g.theo_usd.sum() / g.available_hours.sum()) / (o.theo_usd.sum() / o.available_hours.sum())
+    F_zone = {"zone": wz, "theo_gap_vs_same_games_elsewhere_min": round(min(gap.values()), 3),
+              "theo_gap_vs_same_games_elsewhere_max": round(max(gap.values()), 3), "configs_compared": sorted(gap),
+              "occupancy_in_zone": round(float(inz.occupied_hours.sum() / inz.available_hours.sum()), 3),
+              "occupancy_elsewhere": round(float(out.occupied_hours.sum() / out.available_hours.sum()), 3),
+              "zone_theo_per_avail_hour": round(float(zt.min()), 2),
+              "other_zones_theo_per_avail_hour": [round(float(zt.drop(wz).min()), 2), round(float(zt.drop(wz).max()), 2)]}
     m["scope"] = "Full (Jan-Jun)"
     m["source_script"] = SCRIPT
     m = m.sort_values("house_win_usd").reset_index(drop=True)
@@ -112,9 +140,10 @@ def q1():
     F["q1"] = {"machines_on_floor": int(len(m)), "labels_bottom10": b.label.value_counts().to_dict(),
                "labels_all": m.label.value_counts().to_dict(),
                "thresholds": {"min_days": MIN_DAYS, "availability_low": AVAIL_LOW, "config_ok": CFG_OK, "config_low": CFG_LOW,
-                              "zone_low": ZONE_LOW, "occupancy_ok": OCC_OK, "by_design_floor_index": CFG_BY_DESIGN},
+                              "zone_low": ZONE_LOW, "luck_big": LUCK_BIG, "occupancy_ok": OCC_OK, "by_design_floor_index": CFG_BY_DESIGN},
                "bottom10_house_win_usd": round(float(b.house_win_usd.sum()), 2),
-               "scope": "Full (Jan-Jun) 2025, active machine-days only"}
+               "unlucky_label_count_all": int((m.label == "Unlucky").sum()), "luck_big_share_of_theo": LUCK_BIG,
+               "zone_story": F_zone, "scope": "Full (Jan-Jun) 2025, active machine-days only"}
     return m
 
 
@@ -235,7 +264,10 @@ def model():
     d = q(f"SELECT gaming_date, local_weekday, coin_in_usd::DOUBLE coin_in_usd FROM '{PD}' ORDER BY 1")
     d["gaming_date"] = pd.to_datetime(d.gaming_date)
     train = d.gaming_date <= "2025-04-30"
-    wk = d[train].groupby("local_weekday").coin_in_usd.mean()   # frozen on Jan-Apr only
+    tr = d[train]
+    assert tr.gaming_date.max() <= pd.Timestamp("2025-04-30")   # nothing from May-Jun enters the training means
+    wk = tr.groupby("local_weekday").coin_in_usd.mean()   # frozen on Jan-Apr only
+    wk_test = d[~train].groupby("local_weekday").coin_in_usd.mean()  # for comparison only, never used to predict
     out = pd.DataFrame({"gaming_date": d.gaming_date, "actual_usd": d.coin_in_usd,
                         "pred_model_usd": d.local_weekday.map(wk), "pred_baseline_usd": d[train].coin_in_usd.mean(),
                         "split": np.where(train, "train", "test")})
@@ -245,6 +277,10 @@ def model():
     F["model"] = {"model": "weekday mean of daily coin-in", "baseline": "constant Jan-Apr mean", "train": "2025-01-01..2025-04-30",
                   "test": "2025-05-01..2025-06-30", "mae_model_usd": round(mae("pred_model_usd"), 2),
                   "mae_baseline_usd": round(mae("pred_baseline_usd"), 2), "test_days": int(len(t)),
+                  "weekday_means_train_usd": {k: round(float(v), 2) for k, v in wk.items()},
+                  "weekday_means_test_for_comparison_usd": {k: round(float(v), 2) for k, v in wk_test.items()},
+                  "leak_check": {"train_rows": int(len(tr)), "train_last_date": str(tr.gaming_date.max().date()),
+                                 "test_rows_in_training": int((tr.gaming_date >= pd.Timestamp("2025-05-01")).sum())},
                   "beats_baseline": bool(mae("pred_model_usd") < mae("pred_baseline_usd")),
                   "decision_affected": "weekday staffing and service coverage (placeholder; Person 3's model replaces it)"}
 

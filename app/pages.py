@@ -59,6 +59,13 @@ def overview(sel):
         st.info("Money, availability and theo columns follow your filters. Labels, indices and reasons are full-period "
                 "(Jan-Jun, whole floor) and are not recomputed for this selection.")
     source("min_q1.parquet + min_machine_day.parquet", SCRIPT, "labels: Full (Jan-Jun); money columns: " + sel["preset"])
+    z = f["zone_story"]
+    st.markdown(f"**{z['zone']} machines earn {z['theo_gap_vs_same_games_elsewhere_min']:.0%}-"
+                f"{z['theo_gap_vs_same_games_elsewhere_max']:.0%} less than the same games in other zones, and {z['zone']} has "
+                f"about {z['occupancy_in_zone']:.0%} seat occupancy vs about {z['occupancy_elsewhere']:.0%} elsewhere: "
+                f"the zone, not the machines.**")
+    st.caption("Theo per available hour, same game compared across zones (ratio of sums); occupancy = occupied / available hours. "
+               "Full period. Source: findings/minimum.json (q1.zone_story).")
     counts = f["labels_bottom10"]
     st.subheader("What the labels say about the GM's 10: " + ", ".join(f"{v} {k}" for k, v in counts.items()))
     with st.expander("What each label means (plain words)"):
@@ -109,6 +116,8 @@ def details(sel):
     c[1].metric("Luck residual (full)", f"${r.luck_residual_usd:,.0f}")
     c[2].metric("Availability (full)", f"{r.availability:.1%}")
     c[3].metric("Days on floor", f"{int(r.days_on_floor)}")
+    if r.also_strong:
+        st.warning(f"Primary cause: {r.label}. Also strong: {r.also_strong}.")
     st.markdown("**Competing explanations tested** (full period)")
     st.table(pd.DataFrame([
         ["Luck", f"house win ${r.luck_residual_usd:,.0f} vs theo", "Supported" if r.luck_residual_usd < -0.1 * r.theo_usd else "Not the main cause"],
@@ -204,6 +213,12 @@ def model_plan(sel):
     st.header(f"Weekday-average forecast {verdict} the constant baseline: MAE ${f['mae_model_usd']:,.0f} vs ${f['mae_baseline_usd']:,.0f} per day")
     st.caption(f"Model: {f['model']}. Baseline: {f['baseline']}. Both frozen on {f['train']}; tested on {f['test']} ({f['test_days']} days). "
                f"Fixed dates, unaffected by the sidebar filters. Decision it informs: {f['decision_affected']}. No later-published data used.")
+    lk = f["leak_check"]
+    st.markdown(f"**Leak check:** the weekday means use {lk['train_rows']} training days ending {lk['train_last_date']}; "
+                f"{lk['test_rows_in_training']} May-Jun days were used to build them.")
+    wm = pd.DataFrame({"Training mean $ (Jan-Apr, used by the model)": f["weekday_means_train_usd"],
+                       "May-Jun actual mean $ (comparison only, not used)": f["weekday_means_test_for_comparison_usd"]})
+    st.dataframe(wm.reindex(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).round(0), width="stretch")
     t = m[m.split == "test"].set_index("gaming_date")[["actual_usd", "pred_model_usd", "pred_baseline_usd"]]
     st.line_chart(t.rename(columns={"actual_usd": "Actual", "pred_model_usd": "Weekday model", "pred_baseline_usd": "Constant baseline"}),
                   color=["#000000", BLUE, ORANGE])
