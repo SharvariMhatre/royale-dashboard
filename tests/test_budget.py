@@ -32,3 +32,12 @@ with tempfile.TemporaryDirectory() as t:
     bad_range = pd.DataFrame([{**line("A-INSPECT", 1), "expected_benefit_usd": 50.}]); bad_range.to_parquet(t / "final_budget_plan.parquet")
     assert "outside" in budget.load_proposals(t, cat, stems=("final_budget_plan",)).issues.iloc[0]
 print("budget: all checks passed")
+# payback sensitivity: only permanent actions, cost recovered at cost/benefit months, linear in months
+pb = budget.payback(pd.DataFrame([
+    {"action_type_id": "A-INSPECT", "cost_recomputed_usd": 1200., "expected_benefit_usd": 600., "low_estimate_usd": 0., "high_estimate_usd": 1200.},
+    {"action_type_id": "A-MOVE-MACHINE", "cost_recomputed_usd": 1000., "expected_benefit_usd": 0., "low_estimate_usd": -5., "high_estimate_usd": 5.},
+    {"action_type_id": "A-PROMO", "cost_recomputed_usd": 1., "expected_benefit_usd": 1., "low_estimate_usd": 1., "high_estimate_usd": 1.}]))
+assert list(pb.action_type_id) == ["A-INSPECT", "A-MOVE-MACHINE"]
+assert pb.months_to_pay_back.iloc[0] == 2.0 and pd.isna(pb.months_to_pay_back.iloc[1])
+assert pb.net_3m_expected.iloc[0] == 600. and pb.net_6m_high.iloc[0] == 6000. and pb.net_3m_low.iloc[1] == -1015.
+print("payback: all checks passed")

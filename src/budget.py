@@ -88,6 +88,20 @@ def load_proposals(team_dir: Path = TEAM, cat: pd.DataFrame | None = None,
     return d
 
 
+PERMANENT = {"A-MOVE-MACHINE", "A-MOVE-BANK", "A-INSPECT"}  # one-time cost, benefit can continue after the 30-day window
+
+
+def payback(lines: pd.DataFrame, months=(3, 6)) -> pd.DataFrame:
+    """ASSUMPTION beyond the guide's 30-day window: a permanent action's 30-day benefit repeats every month at the same size
+    (no decay, no extra cost). Returns months to pay back and cumulative net benefit after 3 and 6 months (expected / low / high)."""
+    p = lines[lines.action_type_id.isin(PERMANENT)].copy()
+    cost, e, lo, hi = p.cost_recomputed_usd, p.expected_benefit_usd, p.low_estimate_usd, p.high_estimate_usd
+    p["months_to_pay_back"] = (cost / e).where(e > 0)
+    for n in months:
+        p[f"net_{n}m_expected"], p[f"net_{n}m_low"], p[f"net_{n}m_high"] = e * n - cost, lo * n - cost, hi * n - cost
+    return p
+
+
 def check_plan(plan: pd.DataFrame, cat: pd.DataFrame | None = None) -> list[str]:
     """Rule errors for a chosen plan (rows of load_proposals). Empty list = plan is allowed."""
     cat = catalog() if cat is None else cat

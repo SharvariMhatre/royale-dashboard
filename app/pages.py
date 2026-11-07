@@ -1,7 +1,10 @@
 """Page bodies. Headline numbers come from app_data/findings/minimum.json; filtered tables are recomputed live."""
 import pandas as pd
 import streamlit as st
+import re
+
 import altair as alt
+import budget
 from common import ALL, evidence, findings, load, machine_day, machine_totals, show, snap_months, source, team, tfind, usd
 
 BLUE, ORANGE = "#0072B2", "#E69F00"  # colourblind-safe pair
@@ -276,6 +279,9 @@ def _catalogue_builder(q6):
 # Team-file versions of the pages. Each falls back to the minimum version above when a
 # team file is missing or fails validation.
 # =====================================================================================
+EVID_Q = {"A-MOVE-MACHINE": ["Q1"], "A-MOVE-BANK": ["Q1"], "A-REPLACE-LEASE": ["Q1"], "A-REPLACE-BUY": ["Q1"], "A-INSPECT": ["Q1"],
+          "A-TECH-SHIFT": ["Q3"], "A-PREVENTIVE": ["Q3"], "A-WAYFINDING": ["Q2"], "A-PROMO": ["Q2", "Model"], "A-SURVEY": ["Q2"],
+          "A-COMP-PILOT": ["Q5"], "A-COMP-CHANGE": ["Q5"]}
 TEAM_SRC = "Databricks export (app_data/team)"
 
 
@@ -340,6 +346,11 @@ def overview(sel):
             st.bar_chart(cnt.set_index("Verdict"), color=[BLUE], x_label="Verdict", y_label="Machines")
         st.caption("Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts). 'Truly bad' and "
                    "'Broken' appear nowhere on the floor in this data.")
+        if sel["bank"] != ALL:
+            with st.expander(f"Machines in bank {sel['bank']} ({len(vv)})", expanded=True):
+                show(vv.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+                     "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Chance luck alone explains it", "pct"),
+                     "in_manager_bottom10": ("In the GM's 10", "yesno")})
         _zone_evidence()
     evidence(["Q1"], title="Evidence: Q1 claims behind the verdicts")
     budget_section(sel)
@@ -386,7 +397,6 @@ def budget_section(sel):
     q6, _ = load("min_q6.parquet")
     props, cat = None, None
     try:
-        import budget
         cat = budget.catalog()
         props = budget.load_proposals(cat=cat)
         props = props[props.action_type_id.notna()].reset_index(drop=True) if len(props) else None
@@ -419,13 +429,33 @@ def budget_section(sel):
             c[2].metric("Expected benefit", usd(chosen.expected_benefit_usd.sum()))
             c[3].metric("Benefit range", f"{usd(chosen.low_estimate_usd.sum())} to {usd(chosen.high_estimate_usd.sum())}")
             st.caption("Benefit and range are simple sums of the teams' 30-day estimates (the range assumes every line lands low or high together).")
-            st.markdown("**Evidence for each line:**")
+            st.markdown("**Evidence for each line** (open below; the page link goes deeper):")
+            vv = team("p2_verdicts")
             for t in dict.fromkeys(chosen.action_type_id):
+                nm = cat.loc[t, "name"]
                 tgt = EVIDENCE.get(t, "Machine Details")
                 if tgt in PAGE_OBJ:
-                    st.page_link(PAGE_OBJ[tgt], label=f"{cat.loc[t, 'name']}: see {tgt}")
-                else:
-                    st.write(f"{cat.loc[t, 'name']}: see {tgt}")
+                    st.page_link(PAGE_OBJ[tgt], label=f"{nm}: see {tgt}")
+                ids = [m for tl in chosen[chosen.action_type_id == t].targets for m in re.findall(r"M-\d+", str(tl))]
+                if vv is not None and ids:
+                    show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Target machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+                         "luck_score": ("Chance luck alone explains it", "pct"), "reason": ("Why", "text")})
+                evidence(EVID_Q.get(t, ["Q1"]), title=f"Evidence for {nm}", expanded=True)
+            pb = budget.payback(chosen)
+            if pb.empty and (props.action_type_id.isin(budget.PERMANENT)).any():
+                pb, note = budget.payback(props), "No permanent action picked yet: showing the team's proposed ones."
+            else:
+                note = ""
+            if not pb.empty:
+                st.markdown("**Payback after 30 days (sensitivity)** " + note)
+                st.warning("Assumption beyond the guide's 30-day window, not part of the scored plan: a moved machine or an inspection keeps its "
+                           "30-day benefit every month at the same size (no decay, no extra cost). Real benefits may fade or never repeat.")
+                pb = pb.assign(name=pb.action_type_id.map(cat["name"]), pay=pb.months_to_pay_back.map(lambda m: "does not pay back" if pd.isna(m) else f"{m:.1f} months"),
+                               n3=pb.apply(lambda r: f"{usd(r.net_3m_expected)} ({usd(r.net_3m_low)} to {usd(r.net_3m_high)})", axis=1),
+                               n6=pb.apply(lambda r: f"{usd(r.net_6m_expected)} ({usd(r.net_6m_low)} to {usd(r.net_6m_high)})", axis=1))
+                show(pb, {"name": ("Action", "text"), "cost_recomputed_usd": ("One-time cost", "usd"), "expected_benefit_usd": ("Benefit in first 30 days", "usd"),
+                          "pay": ("Pays back after", "text"), "n3": ("Net after 3 months: expected (low to high)", "text"),
+                          "n6": ("Net after 6 months: expected (low to high)", "text")})
         else:
             st.success("Keep the money: $100,000 remaining, no action slot used.")
         source("team/p1_actions, p2_actions, p3_actions + min_q6.parquet", "teams' notebooks + src/budget.py", "30 days from 2025-07-01")
@@ -439,7 +469,12 @@ def details(sel):
     if v is None:
         st.warning("Team verdict file is pending; showing the minimum version.")
         return _details_min(sel)
-    order = pd.concat([v[v.in_manager_bottom10].sort_values("manager_rank"), v[~v.in_manager_bottom10].sort_values("machine_id")])
+    vb = v if sel["bank"] == ALL else v[v.bank_id == sel["bank"]]
+    if sel["bank"] != ALL:
+        st.markdown(f"**Bank {sel['bank']}: {len(vb)} machines** (change the bank in the sidebar)")
+        show(vb.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+             "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Chance luck alone explains it", "pct")})
+    order = pd.concat([vb[vb.in_manager_bottom10].sort_values("manager_rank"), vb[~vb.in_manager_bottom10].sort_values("machine_id")])
     names = dict(zip(order.machine_id, order.machine_id + "  -  " + order.verdict + (np_where(order) )))
     mid = st.selectbox("Machine (the GM's 10 first)", list(order.machine_id), format_func=lambda m: names[m])
     r = v[v.machine_id == mid].iloc[0]
@@ -586,8 +621,8 @@ def players(sel):
         return _players_min(sel)
     ms = snap_months(sel)
     c1, c2 = st.columns(2)
-    ages = c1.selectbox("Age band", [ALL] + sorted(p.age_band.dropna().unique()))
-    regs = c2.selectbox("Home region", [ALL] + sorted(p.home_region.dropna().unique()))
+    ages = c1.radio("Age band", [ALL] + sorted(p.age_band.dropna().unique()), horizontal=True)
+    regs = c2.radio("Home region", [ALL] + sorted(p.home_region.dropna().unique()), horizontal=True)
     x = p[p.month.isin(ms)]
     for col, val in (("tier", sel["tier"]), ("age_band", ages), ("home_region", regs)):
         if val != ALL:

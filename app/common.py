@@ -36,7 +36,7 @@ def sidebar() -> dict:
         else:
             lo, hi = PRESETS[choice]
         bank = st.selectbox("Bank", [ALL] + f["banks"])
-        tier = st.selectbox("Guest group (opening tier)", [ALL] + f["tiers"])
+        tier = st.radio("Guest group (opening tier)", [ALL] + f["tiers"])
     sel = {"preset": choice, "start": lo, "end": hi, "bank": bank, "tier": tier}
     st.session_state["sel"] = sel
     return sel
@@ -198,7 +198,7 @@ def tfind(key: str):
         return None
 
 
-def evidence(questions: list[str], machine: str | None = None, title: str = "Evidence: claims behind this page"):
+def evidence(questions: list[str], machine: str | None = None, title: str = "Evidence: claims behind this page", expanded: bool = False):
     """Expander listing the team's claims for these questions (alternative tested + limitation shown). Machine claims first."""
     c = team("all_claims")
     if c is None:
@@ -207,7 +207,7 @@ def evidence(questions: list[str], machine: str | None = None, title: str = "Evi
     if machine:
         hit = c.apply(lambda r: machine in f"{r.claim} {r.result}", axis=1)
         c = pd.concat([c[hit], c[~hit]])
-    with st.expander(f"{title} ({len(c)})"):
+    with st.expander(f"{title} ({len(c)})", expanded=expanded):
         show(c, {"claim_id": ("ID", "text"), "claim": ("Claim", "text"), "result": ("Result", "text"),
                  "alternative_tested": ("Alternative explanation tested", "text"), "limitation": ("Limitation", "text"),
                  "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")})
