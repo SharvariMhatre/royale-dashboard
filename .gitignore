@@ -1,0 +1,4 @@
+.venv/
+app_data/samples/
+__pycache__/
+*.csv.gz
