@@ -1,2 +1,4 @@
 # AI log (running)
 - 2026-11-07 Claude Code (Sonnet 5.5) used for setup of project structure; see PROGRESS_sharvari.md.
+- 2026-11-07 Claude wrote src/minimum.py Q1 (peer index, labels).
+- 2026-11-07 Claude wrote Q2-Q6/model in src/minimum.py, app/pages.py; revised Q1 labels per Sharvari's spec.

@@ -79,3 +79,48 @@ def header(title: str, takeaway: str, sel: dict, files: list[str]):
         _, why = load(f)
         if why:
             st.info(f"Pending: {why}.")
+
+
+# ---------- findings + live recompute helpers ----------
+def findings(key: str):
+    """Headline numbers live in app_data/findings/minimum.json; None => page shows pending."""
+    try:
+        return json.loads((APP_DATA / "findings" / "minimum.json").read_text())[key]
+    except Exception:
+        return None
+
+
+def source(file: str, script: str, scope: str):
+    st.caption(f"source: {file}, script: {script}, scope: {scope}")
+
+
+def machine_day(sel: dict):
+    """Active machine-days inside the selected period (+ bank). Recomputed live for any date range."""
+    d, why = load("min_machine_day.parquet")
+    if d is None:
+        return None
+    d = d[(d.gaming_date >= pd.Timestamp(sel["start"])) & (d.gaming_date <= pd.Timestamp(sel["end"]))]
+    return d if sel["bank"] == ALL else d[d.bank_id == sel["bank"]]
+
+
+def machine_totals(d: pd.DataFrame) -> pd.DataFrame:
+    """Per machine, ratio of sums: availability = available/scheduled; theo per available hour = sum theo / sum hours."""
+    g = d.groupby("machine_id").agg(days=("gaming_date", "count"), house_win_usd=("house_win_usd", "sum"),
+                                    theo_usd=("theo_usd", "sum"), luck_residual_usd=("luck_residual_usd", "sum"),
+                                    coin_in_usd=("coin_in_usd", "sum"), available_hours=("available_hours", "sum"),
+                                    scheduled_hours=("scheduled_hours", "sum")).reset_index()
+    g["availability"] = g.available_hours / g.scheduled_hours
+    g["theo_per_avail_hour"] = g.theo_usd / g.available_hours.where(g.available_hours > 0)
+    g["hold"] = g.house_win_usd / g.coin_in_usd.where(g.coin_in_usd > 0)
+    return g
+
+
+def snap_months(sel: dict):
+    """Player/comp data are monthly: a custom range snaps to whole months and says so."""
+    ms = [f"2025-{m:02d}" for m in range(1, 7)
+          if MONTHS[m][0] <= sel["end"] and MONTHS[m][1] >= sel["start"]]
+    exact = sel["preset"] != "Custom range" or (
+        sel["start"].day == 1 and (pd.Timestamp(sel["end"]) + pd.Timedelta(days=1)).day == 1)
+    if not exact:
+        st.warning(f"Player and comp data are monthly. Your range snaps to whole months: {ms[0]} to {ms[-1]}.")
+    return ms

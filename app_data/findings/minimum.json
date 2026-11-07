@@ -1,0 +1,93 @@
+{
+ "q1": {
+  "machines_on_floor": 310,
+  "labels_bottom10": {
+   "Location": 9,
+   "Unlucky": 1
+  },
+  "labels_all": {
+   "Unlucky": 125,
+   "Mixed": 114,
+   "Location": 48,
+   "Game setting": 22,
+   "Truly bad lead": 1
+  },
+  "thresholds": {
+   "min_days": 30,
+   "availability_low": 0.9,
+   "config_ok": 0.9,
+   "config_low": 0.8,
+   "zone_low": 0.85,
+   "occupancy_ok": 0.85,
+   "by_design_floor_index": 0.85
+  },
+  "bottom10_house_win_usd": 232392.0,
+  "scope": "Full (Jan-Jun) 2025, active machine-days only"
+ },
+ "q2": {
+  "first4_weeks_avg_coin_in_usd": 9449862.89,
+  "last4_weeks_avg_coin_in_usd": 9297905.6,
+  "change_pct": -1.6,
+  "entries_change_pct": -3.5,
+  "scope": "average of first vs last 4 complete weeks; entries are observed counts only (see counter coverage)",
+  "explanation_status": "untested in minimum version (Person 3 tests explanations)"
+ },
+ "q3": {
+  "downtime_hours": 5021.1,
+  "downtime_share_of_scheduled": 0.0038,
+  "lost_theo_usd_upper_bound": 90313.38,
+  "by_manufacturer_lost_theo_usd": {
+   "Halcyon": 17749.89,
+   "Northwind": 23642.21,
+   "Ridgeline": 48921.28
+  },
+  "worst_week": "2025-03-24",
+  "scope": "Full period, active machine-days; upper bound because guests may play elsewhere"
+ },
+ "q4": {
+  "tracked_wagered_usd": 163804869.65,
+  "paid_back_usd": 148219409.05,
+  "player_net_usd": -15585460.6,
+  "theo_usd": 15485020.98,
+  "top10pct_share_of_theo": 0.6637,
+  "tracked_players": 113890,
+  "scope": "Full period, carded play only; player net is the opposite sign of house win"
+ },
+ "q5": {
+  "comp_cost_usd": 190669.3,
+  "comp_cost_to_theo_overall": 0.0123,
+  "ratio_by_month": {
+   "2025-01": 0.0111,
+   "2025-02": 0.012,
+   "2025-03": 0.0122,
+   "2025-04": 0.0124,
+   "2025-05": 0.013,
+   "2025-06": 0.0132
+  },
+  "scope": "Full period, tracked players; comp cost is cost to house (already inside POS cogs, not subtracted twice)"
+ },
+ "q6": {
+  "budget_usd": 100000,
+  "horizon": "30 days from 2025-07-01",
+  "lease_cost_per_unit_usd": 3380.0,
+  "keep_money_valid": true,
+  "rules": "up to 3 action types; no comp pilot with comp change; one move/replacement per machine"
+ },
+ "model": {
+  "model": "weekday mean of daily coin-in",
+  "baseline": "constant Jan-Apr mean",
+  "train": "2025-01-01..2025-04-30",
+  "test": "2025-05-01..2025-06-30",
+  "mae_model_usd": 68698.55,
+  "mae_baseline_usd": 218258.1,
+  "test_days": 61,
+  "beats_baseline": true,
+  "decision_affected": "weekday staffing and service coverage (placeholder; Person 3's model replaces it)"
+ },
+ "_meta": {
+  "producer": "Sharvari (minimum)",
+  "script": "src/minimum.py",
+  "data_release": "0.9.0-draft",
+  "generated_at": "2026-11-07 20:56 UTC"
+ }
+}
