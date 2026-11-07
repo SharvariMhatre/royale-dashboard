@@ -333,7 +333,8 @@ def overview(sel):
                  "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "text"),
                  "luck_score": ("Luck percentile", "pct1"), "luck_test": ("Luck as the explanation", "text"),
                  "reason": ("Why", "text"), "confidence": ("Confidence", "text")}, wrap=True)
-        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck. Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%.")
+        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck. Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%. "
+                   "Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); the chart on Machine Details shows a 500-replay sample.")
         if not full_scope:
             st.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
                     "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
@@ -514,7 +515,8 @@ def details(sel):
                                          legend=alt.Legend(title="Legend", orient="top")),
                 strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[[1, 0], [5, 4]]), legend=None))
             st.altair_chart(hist + rules, width="stretch")
-            st.caption(f"500 simulated results for a normal copy of this machine over the same {int(r.days_on_floor)} days it was on the floor. "
+            st.caption(f"Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); this chart shows a 500-replay sample "
+                       f"for a normal copy of this machine over the same {int(r.days_on_floor)} days it was on the floor. "
                        "If the actual line sits far left of the bars, luck alone is a poor explanation.")
     mv = team("p2_move_effects")
     if mv is not None and (mv.machine_id == mid).any():
