@@ -48,11 +48,7 @@ def scope_label(sel: dict) -> str:
 
 import sys
 sys.path.insert(0, str(ROOT / "src"))
-from validate_contracts import C as _C, JSON_KEYS as _J, validate as _validate  # noqa: E402
-
-
-def _contract_names():
-    return set(_C) | set(_J) | {"q2_explanations.json", "claims.csv"}
+from validate_contracts import CONTRACT_STEMS as _STEMS, check as _check, meta_path as _meta_path  # noqa: E402
 
 
 def load(name: str):
@@ -60,8 +56,8 @@ def load(name: str):
     p = APP_DATA / name
     if not p.exists():
         return None, f"{name} not available yet"
-    if name in _contract_names():  # team files must pass the contract before any page uses them
-        errs = _validate(p)
+    if p.stem in _STEMS or name == "claims.csv":  # team files must pass the contract before any page uses them
+        errs, _ = _check(p)
         if errs:
             return None, f"{name} failed validation ({errs[0]})"
     try:
@@ -72,8 +68,8 @@ def load(name: str):
 
 
 def data_version(name: str = "") -> str:
-    meta = APP_DATA / (name + "._meta.json") if name else None
-    if meta and meta.exists():
+    meta = _meta_path(APP_DATA / name) if name else None
+    if meta:
         try:
             m = json.loads(meta.read_text())
             return f"{m.get('producer', '?')} v{m.get('schema_version', '?')} generated {m.get('generated_at', '?')}"
@@ -137,3 +133,36 @@ def snap_months(sel: dict):
     if not exact:
         st.warning(f"Player and comp data are monthly. Your range snaps to whole months: {ms[0]} to {ms[-1]}.")
     return ms
+
+
+def footer(files: list[str]):
+    """Page footer: version of each team file in use, and a warning when its _meta sidecar is missing."""
+    lines = []
+    for f in files:
+        p = APP_DATA / f
+        if p.exists() and p.stem in _STEMS:
+            errs, warns = _check(p)
+            lines += [f"Warning: {w}" for w in warns] if not errs else []
+    if lines:
+        st.divider()
+        for ln in lines:
+            st.caption(ln)
+
+
+# ---------- manager-friendly formatting ----------
+def usd(x) -> str:
+    """-$3,905 (never $-3,905)."""
+    return "" if pd.isna(x) else f"{'-' if x < 0 else ''}${abs(x):,.0f}"
+
+
+def _fmt(s: pd.Series, kind: str) -> pd.Series:
+    f = {"usd": usd, "pct": lambda x: f"{x:.0%}", "pct1": lambda x: f"{x:.1%}", "int": lambda x: f"{int(x):,}",
+         "num": lambda x: f"{x:,.1f}", "pct2": lambda x: f"{x:.2%}", "month": lambda x: f"{pd.Timestamp(str(x) + '-01'):%b %Y}", "yesno": lambda x: "Yes" if x else "No",
+         "date": lambda x: f"{pd.Timestamp(x):%b} {pd.Timestamp(x).day}", "text": str}[kind]
+    return s.map(lambda x: "" if (x is None or (not isinstance(x, (list, str)) and pd.isna(x))) else f(x))
+
+
+def show(df: pd.DataFrame, spec: dict):
+    """Display a table for a manager: spec = {column: (plain-English name, kind)}; kinds: usd pct pct1 int num yesno date text."""
+    out = pd.DataFrame({lab: _fmt(df[c], k) for c, (lab, k) in spec.items() if c in df.columns})
+    st.dataframe(out, hide_index=True, width="stretch")

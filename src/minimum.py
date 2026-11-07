@@ -94,7 +94,7 @@ def q1():
             return "Broken lead", f"Only {r.availability:.0%} of scheduled hours available."
         if r.config_index >= CFG_OK and r.luck_residual_usd < -LUCK_BIG * r.theo_usd:
             return "Unlucky", (f"Earns {r.config_index:.0%} of same-config machines per available hour, "
-                               f"but house win is ${-r.luck_residual_usd:,.0f} below theo.")
+                               f"but casino win is ${-r.luck_residual_usd:,.0f} below expected win.")
         if r.config_index >= CFG_LOW and r.by_design_low and r.occupancy_vs_zone >= OCC_OK:
             return "Game setting", (f"Keeps pace with its config ({r.config_index:.0%}), but {r.config_id} earns low by design "
                                     f"(RTP {r.configured_rtp:.0%}, avg bet ${r.avg_bet_usd:.2f}); players use it normally.")
@@ -107,7 +107,7 @@ def q1():
     def also(r):
         c = []
         if r.luck_residual_usd < -LUCK_BIG * r.theo_usd and r.label != "Unlucky":
-            c.append(f"Luck (-${-r.luck_residual_usd:,.0f} vs theo)")
+            c.append(f"Luck (-${-r.luck_residual_usd:,.0f} vs expected win)")
         if r.zone_index < ZONE_LOW and r.label != "Location":
             c.append(f"Location (zone index {r.zone_index:.0%})")
         if r.config_index < CFG_LOW and r.label != "Truly bad lead":

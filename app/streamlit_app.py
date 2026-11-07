@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import streamlit as st
-from common import sidebar, header
+from common import sidebar, header, footer
 import pages
 
 st.set_page_config(page_title="The Gilded Ace - Decision Room", layout="wide")
@@ -24,6 +24,7 @@ def make(key):
         header(title, q, sidebar(), files)
         sel = st.session_state["sel"]
         getattr(pages, BODY[key])(sel)
+        footer(files)
     page.__name__ = key.replace(" ", "_").replace("&", "and").replace("$", "")
     return page
 

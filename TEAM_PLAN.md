@@ -4,13 +4,13 @@ DEADLINE: hacking ends 12:00 PM Central, Sun Nov 8 2026. Clock: h8=7 PM Sat, h12
 
 Reconciled on 2026-11-07 against GUIDE.md and reference/DATA_DICTIONARY.md. Keeps the four-person structure from Nikita and Bharath's plan and fixes the parts that would lose points.
 
-## Roles
-| Person | Role | Gives the team | Hard deadline (hours from start) |
-|---|---|---|---|
-| Person 1 (Nikita) | Data Builder | clean tables in Databricks + exported parquet files | hour 8 |
-| Person 2 (Bharath) | Machine Detective | verdict table `q1_machines.parquet` | hour 14 |
-| Person 3 (Aditi) | Predictor and Money Planner | `forecast.parquet` by hour 12, `budget.parquet` + measurement plan by hour 17, `q2_*`, `q4_*`, `q5_*` by hour 14 |
-| Person 4 (Sharvari) | Dashboard and Storyteller | public Streamlit link, write-up, appendix, video, Devpost | submission |
+## Roles (updated 2026-11-07: real file names and owners)
+| Person | Role | Question focus | Files (all parquet in `app_data/team/`) | Due |
+|---|---|---|---|---|
+| Person 1 (Aditi) | Data Builder | Q3 downtime + Q5 comps | `p1_machine_day_clean` (7 PM Sat); `p1_downtime`, `p1_comps`, `p1_leak_clues` (1 AM Sun); `p1_actions`, `p1_claims` (4 AM Sun) | h8 / h14 / h17 |
+| Person 2 (Bharath) | Machine Detective | Q1 machines | `p2_verdicts`, `p2_luck_sims`, `p2_move_effects` (1 AM Sun); `p2_actions`, `p2_claims` (4 AM Sun) | h14 / h17 |
+| Person 3 (Nikita) | Predictor | Q2 demand + Q4 players + model | `p3_forecast_results`, `p3_model_metrics` (11 PM Sat); `p3_demand`, `p3_players`, `p3_concentration` (1 AM Sun); `p3_actions`, `p3_claims` (4 AM Sun) | h12 / h14 / h17 |
+| Person 4 (Sharvari) | Dashboard and Storyteller | all, integration | public Streamlit link, write-up, appendix, video, Devpost | submission |
 
 Rule that protects the Dashboard Royale entry: Sharvari builds a **self-sufficient minimum** version of all six answers from `prepared_daily_view`, `property_day` and `player_period` by hour 6 (see SHARVARI_DASHBOARD.md). Team outputs replace those minimums as they arrive. If a team file is late or invalid, the dashboard still answers the question with the minimum version and says which version is shown.
 
@@ -26,7 +26,7 @@ Rule that protects the Dashboard Royale entry: Sharvari builds a **self-sufficie
 9. **Model honesty.** Train Jan–Apr, test May–Jun, baseline = constant training mean, freeze before testing, report MAE in dollars (and MAPE), say which staffing or promotion decision changes. It may lose to the baseline; report it anyway.
 10. **Hour-based deadlines need a clock.** Post the Devpost deadline with time zone in TEAM_PLAN.md line 1 and convert hours 8/12/14/17 to clock times. Reserve the final 30% for integration, rehearsal, video and submission; nothing new after that point.
 
-## Shared definitions (everyone uses these; Nikita's clean tables implement them)
+## Shared definitions (everyone uses these; Aditi's `p1_machine_day_clean` implements them)
 - Window 2025-01-01..2025-06-30; gaming day 06:00–06:00; exclude rows with `active = false` or empty `location_id` (about 1,018).
 - Hours from `calendar_day.scheduled_seconds` (82,800 on 2025-03-08); availability = available / scheduled.
 - Ratio of sums only. Hold = sum(house_win)/sum(coin_in). Theo per available hour = sum(theo)/sum(available_hours).
@@ -35,22 +35,22 @@ Rule that protects the Dashboard Royale entry: Sharvari builds a **self-sufficie
 - Location by date from `placements` (or `prepared_daily_view`). `floor_walkways` closure is a candidate demand explanation to test.
 - Payout anomalies are leads to inspect. No accusations. No individual player IDs; groups of 10 or more. No ideas that push heavy losers to play more.
 
-## File contract (all files in app_data/, parquet, with a `_meta` sidecar: schema_version, data_release, generated_at, producer)
-| File | Grain / key | Minimum columns | Producer | Due |
-|---|---|---|---|---|
-| machine_day_clean.parquet | machine_id, gaming_date | zone_id, zone_name, bank_id, location_id, config_id, configured_rtp, volatility_class, manufacturer, scheduled_hours, available_hours, occupied_hours, coin_in_usd, payout_usd, house_win_usd, theo_usd, luck_residual_usd, carded_coin_in_usd, faults_opened | Person 1 | h8 |
-| floor_day_clean.parquet | gaming_date | property_day columns + local_weekday, is_weekend, federal_holiday, events_active, scheduled_seconds | Person 1 | h8 |
-| leak_clues.parquet | machine_id, gaming_date, reason | source_table, value, note | Person 1 | h8 |
-| q1_machines.parquet | machine_id, scope (full, each month, H1, H2) | house_win_usd, theo_usd, luck_residual_usd, coin_in_usd, available_hours, availability, theo_per_avail_hour, peer_index, peer_index_lo, peer_index_hi, peer_group_used, n_peers, hold_gap, hold_gap_lo, hold_gap_hi, luck_sim_share_bottom10, downtime_hours, downtime_lost_theo_usd, moved_flag, verdict, verdict_reason, dollar_amount_usd, source_script | Person 2 | h14 |
-| forecast.parquet + model_metrics.json | gaming_date | actual_usd, pred_model_usd, pred_baseline_usd, split (train/test); metrics: MAE and MAPE for both, train/test dates, decision_affected | Person 3 | h12 |
-| q2_floor_week.parquet, q2_zone_month.parquet, q2_explanations.json | week / zone×month | coin_in_usd, theo_usd, occupied_machine_hours, entries, coverage_share; explanations: name, tested_how, supported (yes/no/untested) | Person 3 | h14 |
-| q3_downtime.parquet | machine_id, week | downtime_hours, lost_theo_usd (upper bound), manufacturer, zone_id | Person 2 | h14 |
-| q4_player_month.parquet, q4_concentration.parquet | group_type, group, month / scope | players (>=10), wagered_usd, paid_back_usd, net_usd, theo_usd; top1/10/20 share of theo and net, gini | Person 3 | h14 |
-| q5_comps_month.parquet | month, tier | comp_cost_usd, comp_face_value_usd, theo_usd, comp_cost_to_theo_ratio, comps_redeemed, points_earned, points_redeemed | Person 3 | h14 |
-| budget.parquet + measurement_plan.md | action line | action_type_id, name, quantity, targets, lead_days, operating_days, cost_usd, evidence (observed), estimate_usd, estimate_lo, estimate_hi, assumption, breakeven_improvement, metric, measurement_method, evidence_ref | Person 3 | h17 |
-| claims.csv | claim_id | claim, question (Q1–Q6), table_or_query, result, alternative_explanation, limitation, source_script, scope | everyone appends, Sharvari owns | rolling |
+## File contract (parquet in `app_data/team/`; checked by `src/validate_contracts.py`)
+Required columns are enforced; other files only get key and sanity checks until the 20-row samples arrive in `app_data/team/samples/` (then the exact columns are recorded here).
+| File | Required columns | Sanity checks |
+|---|---|---|
+| `p1_machine_day_clean` | machine_id, gaming_date | unique (machine_id, gaming_date); no `_cents` columns |
+| `p1_downtime`, `p1_comps`, `p2_luck_sims`, `p2_move_effects`, `p3_model_metrics`, `p3_demand` | (to be recorded from samples) | non-empty; no `_cents` columns |
+| `p1_leak_clues` | machine_id, gaming_date, reason | no `_cents` columns |
+| `p2_verdicts` | machine_id, zone_id, config_id, verdict, verdict_reason, dollar_impact_usd, luck_score, peer_index, peer_index_lo, peer_index_hi, availability, moved_flag | unique machine_id (and scope if present); verdict in {Unlucky, Bad spot, Broken, Inspect, Truly bad, Mixed / not enough evidence}; lo <= peer_index <= hi |
+| `p3_forecast_results` | gaming_date, actual_usd, pred_model_usd, pred_baseline_usd, split | split in {train, test}; train dates all before test dates; unique gaming_date |
+| `p3_players`, `p3_concentration` | (to be recorded) | no player_id column; `players` >= 10 when present |
+| `p*_actions` | action_type_id, name, quantity, targets, lead_days, operating_days, cost_usd, estimate_lo_usd, estimate_hi_usd, assumption, metric, measurement_method, evidence_ref | cost_usd >= 0; quantity > 0; estimate_lo_usd <= estimate_hi_usd |
+| `p*_claims` | claim_id, claim, question, table_or_query, result, alternative_explanation, limitation, source_script | non-empty; claim_id unique |
+| `claims.csv` (Sharvari, final appendix) | claim_id, claim, question, table_or_query, result, alternative_explanation, limitation, source_script, scope | |
 
-Validation: `src/validate_contracts.py` (Sharvari writes it from this table) must pass before a file is used. Invalid file = "pending" on the page and the claim stays out of the appendix.
+`_meta` sidecar (`<file>._meta.json` with schema_version, data_release, generated_at, producer) is **optional**: missing = a warning in the page footer, not "Pending". A failed required-column or sanity check = "Pending" on the page, and the claim stays out of the appendix.
+Budget rules (max 3 action types, $100,000, quantity limits, incompatibilities, guide cost formula) are enforced by `src/budget.py` across the merged `p*_actions` files.
 
 ## Checkpoints (humans talk)
 - C1 (h1): deadline posted, Databricks workspace shared, GitHub repo cloned by all, this contract agreed, 20-row samples of each file cut from `prepared_daily_view`.
