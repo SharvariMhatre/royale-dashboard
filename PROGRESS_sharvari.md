@@ -30,3 +30,4 @@ DEADLINE: hacking ends 12:00 PM Central, Sun Nov 8 2026. Clock: h8=7 PM Sat, h12
 - Budget builder: payback-after-30-days sensitivity for permanent actions (moves, inspection) via budget.payback(); 3 and 6 months, labelled as an assumption beyond the 30-day window. tests/test_budget.py covers it.
 - Committed locally, NOT pushed (awaiting OK).
 - Overview browser-check fixes: 'Not on floor in this period' replaces blanks (GM list, new + minimum); 'Luck percentile' rename + caption; Why column wraps (st.table) and Confidence moved last; answer box is two short lines from team.json. Pushed.
+- Machine Details: histogram axis/caption use the machine's own days on floor (N from data); Luck result has three outcomes (Supported >=20%, Unlikely 1-20%, Not supported <1%), same wording and a 'Luck as the explanation' column on the Overview. Pushed.

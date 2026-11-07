@@ -285,6 +285,11 @@ EVID_Q = {"A-MOVE-MACHINE": ["Q1"], "A-MOVE-BANK": ["Q1"], "A-REPLACE-LEASE": ["
 TEAM_SRC = "Databricks export (app_data/team)"
 
 
+def luck_result(p) -> str:
+    """Luck as an explanation: >=20% Supported, 1-20% Unlikely, <1% Not supported (share of fair replays that did worse than reality)."""
+    return "Supported" if p >= 0.20 else ("Unlikely" if p >= 0.01 else "Not supported")
+
+
 def _full_weeks(daily: pd.DataFrame, start, end) -> pd.DataFrame:
     """Keep only complete Monday-Sunday weeks (7 distinct days) that sit fully inside [start, end]."""
     d = daily.copy()
@@ -322,12 +327,13 @@ def overview(sel):
             g = g.merge(t, on="machine_id", how="left")
         else:
             g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct
+        g["luck_test"] = g.luck_score.map(luck_result)
         show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
                  "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd_nf"),
                  "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "text"),
-                 "luck_score": ("Luck percentile", "pct"), "reason": ("Why", "text"),
-                 "confidence": ("Confidence", "text")}, wrap=True)
-        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck.")
+                 "luck_score": ("Luck percentile", "pct1"), "luck_test": ("Luck as the explanation", "text"),
+                 "reason": ("Why", "text"), "confidence": ("Confidence", "text")}, wrap=True)
+        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck. Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%.")
         if not full_scope:
             st.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
                     "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
@@ -484,12 +490,12 @@ def details(sel):
     c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
     c[1].metric("Expected win", usd(r.theo_usd))
     c[2].metric("Days on floor", f"{int(r.days_on_floor)}")
-    c[3].metric("Luck percentile", f"{r.luck_score:.0%}")
+    c[3].metric("Luck percentile", f"{r.luck_score:.1%}")
     st.markdown("**Competing explanations tested** (full period)")
     peer = r.theo_per_hour_usd / r.peer_theo_per_hour_usd if r.peer_theo_per_hour_usd else float("nan")
     avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # p2 file stores a fraction
     st.table(pd.DataFrame([
-        ["Luck", f"{r.luck_score:.0%} of fair simulated six-month results were this low or lower", "Supported" if r.luck_score >= 0.05 else "Not supported"],
+        ["Luck", f"{r.luck_score:.1%} of fair simulated results over its {int(r.days_on_floor)} days on the floor were this low or lower", luck_result(r.luck_score)],
         ["Short time on floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"],
         ["Location", f"zone earns {r.zone_index:.0%} of the typical zone per available hour", "Supported" if r.zone_index < 0.85 else "Not supported"],
         ["Game or machine", f"earns {peer:.0%} of same-game peers per available hour", "Supported" if peer < 0.8 else "Not supported"],
@@ -500,7 +506,7 @@ def details(sel):
         s = sims[sims.machine_id == mid]
         if len(s):
             hist = alt.Chart(s).mark_bar(color="#9ecae1").encode(
-                x=alt.X("sim_house_win_usd:Q", bin=alt.Bin(maxbins=30), title="Simulated six-month casino win ($)"),
+                x=alt.X("sim_house_win_usd:Q", bin=alt.Bin(maxbins=30), title=f"Simulated casino win over its time on the floor ({int(r.days_on_floor)} days) ($)"),
                 y=alt.Y("count()", title="Simulations (of 500)"))
             marks = pd.DataFrame({"x": [r.house_win_usd, r.theo_usd], "Line": ["Actual result", "Expected (theo)"]})
             rules = alt.Chart(marks).mark_rule(size=3).encode(
@@ -508,8 +514,8 @@ def details(sel):
                                          legend=alt.Legend(title="Legend", orient="top")),
                 strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[[1, 0], [5, 4]]), legend=None))
             st.altair_chart(hist + rules, width="stretch")
-            st.caption("500 simulated six-month results for a normal copy of this machine. If the actual line sits far left of the bars, "
-                       "luck alone is a poor explanation.")
+            st.caption(f"500 simulated results for a normal copy of this machine over the same {int(r.days_on_floor)} days it was on the floor. "
+                       "If the actual line sits far left of the bars, luck alone is a poor explanation.")
     mv = team("p2_move_effects")
     if mv is not None and (mv.machine_id == mid).any():
         st.markdown("**This machine was moved**")
