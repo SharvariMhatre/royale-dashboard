@@ -46,11 +46,24 @@ def scope_label(sel: dict) -> str:
     return sel["preset"] if sel["preset"] != "Custom range" else f"custom {sel['start']} to {sel['end']}"
 
 
+import sys
+sys.path.insert(0, str(ROOT / "src"))
+from validate_contracts import C as _C, JSON_KEYS as _J, validate as _validate  # noqa: E402
+
+
+def _contract_names():
+    return set(_C) | set(_J) | {"q2_explanations.json", "claims.csv"}
+
+
 def load(name: str):
     """Return (DataFrame, None) or (None, reason). A missing/broken/empty file is 'pending'."""
     p = APP_DATA / name
     if not p.exists():
         return None, f"{name} not available yet"
+    if name in _contract_names():  # team files must pass the contract before any page uses them
+        errs = _validate(p)
+        if errs:
+            return None, f"{name} failed validation ({errs[0]})"
     try:
         df = pd.read_parquet(p) if p.suffix == ".parquet" else pd.read_csv(p)
     except Exception as e:  # corrupt file must not crash a judge's page

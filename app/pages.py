@@ -5,6 +5,7 @@ from common import ALL, findings, load, machine_day, machine_totals, snap_months
 
 BLUE, ORANGE = "#0072B2", "#E69F00"  # colourblind-safe pair
 SCRIPT = "src/minimum.py"
+PAGE_OBJ = {}  # filled by streamlit_app.py with st.Page objects
 
 
 def usd(x):
@@ -96,6 +97,13 @@ def overview(sel):
             st.warning("Moves/replacements must target different machines (not checked here: targets are not chosen yet).")
         left = 100000 - total
         (st.error if left < 0 else st.success)(f"Spent ${total:,.0f}; remaining ${left:,.0f}" + (" (OVER BUDGET)" if left < 0 else ""))
+        st.markdown("**Evidence for each line:**")
+        for a in pick:
+            tgt = EVIDENCE[a]
+            if tgt in PAGE_OBJ:
+                st.page_link(PAGE_OBJ[tgt], label=f"{acts.loc[a, 'name']}: see {tgt}")
+            else:
+                st.write(f"{acts.loc[a, 'name']}: see {tgt}")
     else:
         st.success("Keep the money: $100,000 remaining, no action slot used.")
     source("min_q6.parquet", SCRIPT, "catalogue prices; 30 days from 2025-07-01")

@@ -27,5 +27,8 @@ def make(key):
     page.__name__ = key.replace(" ", "_").replace("&", "and").replace("$", "")
     return page
 
-nav = st.navigation([st.Page(make(k), title=k, url_path=make(k).__name__.lower()) for k in PAGES])
+fns = {k: make(k) for k in PAGES}
+page_objs = {k: st.Page(fns[k], title=k, url_path=fns[k].__name__.lower()) for k in PAGES}
+pages.PAGE_OBJ.update(page_objs)  # lets the budget builder link to evidence pages
+nav = st.navigation(list(page_objs.values()))
 nav.run()
