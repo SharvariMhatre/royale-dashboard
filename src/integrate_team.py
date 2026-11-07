@@ -51,6 +51,12 @@ def main():
         pairs = [{"retired": a, "installed": b, "date": ra.group(1), "location": loc[a]}
                  for a, ra in ret.items() if ra for b, rb in ins.items() if rb and rb.group(1) == ra.group(1) and loc[a] == loc[b]]
         F["same_slot"] = pairs
+        F["gm10_rows"] = gm.sort_values("manager_rank")[["manager_rank", "machine_id", "zone_name", "location_id", "verdict", "reason", "luck_score",
+                                                          "house_win_usd", "theo_usd", "days_on_floor"]].round(4).to_dict("records")
+        F["inspect"] = [r for r in F["gm10_rows"] if r["verdict"] == "Inspect"]
+        lr = lambda x: "Supported" if x >= 0.20 else ("Unlikely" if x >= 0.01 else "Not supported")   # same rule as app/pages.py luck_result
+        F["luck_tests_gm10"] = counts(gm.luck_score.map(lr))
+        F["luck_floor"] = {"below_1pct": int((v.luck_score < 0.01).sum()), "machines": int(len(v)), "expected_by_chance": round(len(v) * 0.01, 1)}
         # luck_score check: is it the share of simulated results at or below the actual?
         s = rd("p2_luck_sims")
         if s is not None:
@@ -74,6 +80,15 @@ def main():
     if lc is not None:
         F["leak_clues"] = {"by_rule": counts(lc.rule_failed), "machines": int(lc.machine_id.nunique()), "total": int(len(lc)),
                            "note": "leads to inspect, not accusations"}
+    mv = rd("p2_move_effects")
+    if mv is not None:
+        F["moves"] = mv.assign(move_date=mv.move_date.astype(str)).round(4).to_dict("records")
+    ac = rd("p2_actions")
+    if ac is not None:
+        g = ac[ac.action.str.contains("manager", case=False)]
+        if len(g):
+            F["gm_plan"] = {"action": str(g.action.iloc[0]), "quantity": int(g.quantity.iloc[0]), "cost_usd": float(g.cost_usd.iloc[0]),
+                            "expected_benefit_usd": float(g.expected_benefit_usd.iloc[0])}
     z, b = rd("p2_zone_index"), rd("p2_b40_closure_effect")
     if z is not None:
         F["zones"] = z.round(4).to_dict("records")

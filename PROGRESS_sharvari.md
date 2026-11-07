@@ -31,3 +31,4 @@ DEADLINE: hacking ends 12:00 PM Central, Sun Nov 8 2026. Clock: h8=7 PM Sat, h12
 - Committed locally, NOT pushed (awaiting OK).
 - Overview browser-check fixes: 'Not on floor in this period' replaces blanks (GM list, new + minimum); 'Luck percentile' rename + caption; Why column wraps (st.table) and Confidence moved last; answer box is two short lines from team.json. Pushed.
 - Machine Details: histogram axis/caption use the machine's own days on floor (N from data); Luck result has three outcomes (Supported >=20%, Unlikely 1-20%, Not supported <1%), same wording and a 'Luck as the explanation' column on the Overview. Pushed.
+- Caption fix pushed (307f766). Docs drafted: docs/writeup.md (370 words, numbers from team.json via src/make_docs.py, $100K section marked PENDING), docs/evidence.md (27 claims), docs/ai_disclosure.md (teammates must fill the Databricks AI features line), docs/judge_qa.md (6 questions). Not pushed. Screenshots wait for the final budget.

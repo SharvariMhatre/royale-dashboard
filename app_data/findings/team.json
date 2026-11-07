@@ -39,6 +39,152 @@
    "location": "L-38-5"
   }
  ],
+ "gm10_rows": [
+  {
+   "manager_rank": 1.0,
+   "machine_id": "M-5076",
+   "zone_name": "Back Forty",
+   "location_id": "L-38-5",
+   "verdict": "Short exposure",
+   "reason": "Only 49 days on the floor (installed 2025-05-13). Total win is low because of time, not performance.",
+   "luck_score": 0.0333,
+   "house_win_usd": 3573.25,
+   "theo_usd": 7478.7,
+   "days_on_floor": 49
+  },
+  {
+   "manager_rank": 2.0,
+   "machine_id": "M-1158",
+   "zone_name": "Back Forty",
+   "location_id": "L-31-4",
+   "verdict": "Inspect",
+   "reason": "Hold 3.0% vs 10.0% expected; z = -4.57 is beyond luck. Verify paytable.",
+   "luck_score": 0.0,
+   "house_win_usd": 15796.25,
+   "theo_usd": 51961.0,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 3.0,
+   "machine_id": "M-1120",
+   "zone_name": "Back Forty",
+   "location_id": "L-38-5",
+   "verdict": "Short exposure",
+   "reason": "Only 132 days on the floor (retired 2025-05-13). Total win is low because of time, not performance.",
+   "luck_score": 0.2192,
+   "house_win_usd": 16355.0,
+   "theo_usd": 18910.925,
+   "days_on_floor": 132
+  },
+  {
+   "manager_rank": 4.0,
+   "machine_id": "M-1118",
+   "zone_name": "High-Limit Room",
+   "location_id": "L-27-3",
+   "verdict": "Short exposure",
+   "reason": "Only 55 days on the floor (retired 2025-02-25). Total win is low because of time, not performance.",
+   "luck_score": 0.2597,
+   "house_win_usd": 20050.0,
+   "theo_usd": 25329.0,
+   "days_on_floor": 55
+  },
+  {
+   "manager_rank": 5.0,
+   "machine_id": "M-1238",
+   "zone_name": "Back Forty",
+   "location_id": "L-35-6",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (114% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.0376,
+   "house_win_usd": 24932.75,
+   "theo_usd": 33139.3125,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 6.0,
+   "machine_id": "M-1181",
+   "zone_name": "Back Forty",
+   "location_id": "L-38-4",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (94% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.0085,
+   "house_win_usd": 26977.0,
+   "theo_usd": 32516.16,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 7.0,
+   "machine_id": "M-1035",
+   "zone_name": "Back Forty",
+   "location_id": "L-31-1",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (104% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.4408,
+   "house_win_usd": 30303.5,
+   "theo_usd": 30894.6,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 8.0,
+   "machine_id": "M-1179",
+   "zone_name": "Back Forty",
+   "location_id": "L-36-4",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (99% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.0745,
+   "house_win_usd": 30393.75,
+   "theo_usd": 33784.7,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 9.0,
+   "machine_id": "M-1017",
+   "zone_name": "Back Forty",
+   "location_id": "L-37-1",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (98% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.7186,
+   "house_win_usd": 31939.5,
+   "theo_usd": 29525.6375,
+   "days_on_floor": 181
+  },
+  {
+   "manager_rank": 10.0,
+   "machine_id": "M-1265",
+   "zone_name": "Back Forty",
+   "location_id": "L-33-3",
+   "verdict": "Bad spot",
+   "reason": "Normal for its game in the Back Forty (93% of peers), but the zone earns 65% of the floor.",
+   "luck_score": 0.4747,
+   "house_win_usd": 32071.0,
+   "theo_usd": 32208.88,
+   "days_on_floor": 181
+  }
+ ],
+ "inspect": [
+  {
+   "manager_rank": 2.0,
+   "machine_id": "M-1158",
+   "zone_name": "Back Forty",
+   "location_id": "L-31-4",
+   "verdict": "Inspect",
+   "reason": "Hold 3.0% vs 10.0% expected; z = -4.57 is beyond luck. Verify paytable.",
+   "luck_score": 0.0,
+   "house_win_usd": 15796.25,
+   "theo_usd": 51961.0,
+   "days_on_floor": 181
+  }
+ ],
+ "luck_tests_gm10": {
+  "Supported": 5,
+  "Unlikely": 3,
+  "Not supported": 2
+ },
+ "luck_floor": {
+  "below_1pct": 6,
+  "machines": 310,
+  "expected_by_chance": 3.1
+ },
  "luck_score_check": {
   "definition": "share of simulated six-month results at or below the machine's actual house win",
   "max_abs_diff_vs_file_all_machines": 0.086,
@@ -71,6 +217,70 @@
   "machines": 103,
   "total": 165,
   "note": "leads to inspect, not accusations"
+ },
+ "moves": [
+  {
+   "machine_id": "M-1152",
+   "from_location": "L-33-4",
+   "to_location": "L-03-7",
+   "from_zone": "Back Forty",
+   "to_zone": "Main Entrance",
+   "move_date": "2025-02-04",
+   "days_after": 147,
+   "theo_per_hour_before": 14.2588,
+   "theo_per_hour_after": 29.3527,
+   "change_pct": 1.0586,
+   "unmoved_floor_change_pct": -0.0022,
+   "adjusted_change_pct": 1.0631
+  },
+  {
+   "machine_id": "M-1113",
+   "from_location": "L-12-1",
+   "to_location": "L-09-7",
+   "from_zone": "Center Pit",
+   "to_zone": "Center Pit",
+   "move_date": "2025-02-18",
+   "days_after": 133,
+   "theo_per_hour_before": 23.1225,
+   "theo_per_hour_after": 24.0528,
+   "change_pct": 0.0402,
+   "unmoved_floor_change_pct": -0.0195,
+   "adjusted_change_pct": 0.0609
+  },
+  {
+   "machine_id": "M-1126",
+   "from_location": "L-40-6",
+   "to_location": "L-21-7",
+   "from_zone": "Hotel Corridor",
+   "to_zone": "Bar Row",
+   "move_date": "2025-05-06",
+   "days_after": 56,
+   "theo_per_hour_before": 12.3565,
+   "theo_per_hour_after": 12.1348,
+   "change_pct": -0.0179,
+   "unmoved_floor_change_pct": -0.0454,
+   "adjusted_change_pct": 0.0287
+  },
+  {
+   "machine_id": "M-1299",
+   "from_location": "L-07-3",
+   "to_location": "L-44-7",
+   "from_zone": "Center Pit",
+   "to_zone": "Hotel Corridor",
+   "move_date": "2025-06-10",
+   "days_after": 21,
+   "theo_per_hour_before": 14.5644,
+   "theo_per_hour_after": 12.6008,
+   "change_pct": -0.1348,
+   "unmoved_floor_change_pct": -0.0542,
+   "adjusted_change_pct": -0.0853
+  }
+ ],
+ "gm_plan": {
+  "action": "Replace with a purchased machine (manager's plan, NOT recommended)",
+  "quantity": 10,
+  "cost_usd": 220000.0,
+  "expected_benefit_usd": 0.0
  },
  "zones": [
   {
@@ -205,6 +415,6 @@
  "_meta": {
   "producer": "Sharvari (integration)",
   "script": "src/integrate_team.py",
-  "generated_at": "2026-11-07 22:32 UTC"
+  "generated_at": "2026-11-07 22:57 UTC"
  }
 }
