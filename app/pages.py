@@ -5,9 +5,9 @@ import re
 
 import altair as alt
 import budget
+import theme as T
 from common import ALL, evidence, findings, load, machine_day, machine_totals, show, snap_months, source, team, tfind, usd
 
-BLUE, ORANGE = "#0072B2", "#E69F00"  # colourblind-safe pair
 SCRIPT = "src/minimum.py"
 PAGE_OBJ = {}  # filled by streamlit_app.py with st.Page objects
 
@@ -46,7 +46,7 @@ def _overview_min(sel):
     z, f3 = f["zone_story"], findings("q3")
     lb = f["labels_bottom10"]
     others = ", ".join(f"{v} {'looks' if v == 1 else 'look'} {k.lower()}" for k, v in lb.items() if k != "Location")
-    st.info(f"**Answer in brief.** Of the GM's 10 lowest machines, {lb.get('Location', 0)} sit in a weak zone ({z['zone']} earns "
+    T.info(f"**Answer in brief.** Of the GM's 10 lowest machines, {lb.get('Location', 0)} sit in a weak zone ({z['zone']} earns "
             f"{z['theo_gap_vs_same_games_elsewhere_min']:.0%}-{z['theo_gap_vs_same_games_elsewhere_max']:.0%} less than the same games "
             f"elsewhere){', and ' + others if others else ''}, so the list mostly shows where machines sit, not how they perform. "
             f"Downtime is small (at most {usd(f3['lost_theo_usd_upper_bound'])} of expected win, {f3['downtime_share_of_scheduled']:.2%} of scheduled hours), "
@@ -68,7 +68,7 @@ def _overview_min(sel):
              "zone_index": ("Zone earnings vs typical zone", "pct"), "config_index": ("Earnings vs same game elsewhere", "pct"),
              "occupancy_vs_zone": ("Seats used vs zone", "pct"), "label": ("Likely cause", "text"), "label_reason": ("Why", "text")})
     if not full_scope:
-        st.info("Money, availability and theo columns follow your filters. Labels, indices and reasons are full-period "
+        T.info("Money, availability and theo columns follow your filters. Labels, indices and reasons are full-period "
                 "(Jan-Jun, whole floor) and are not recomputed for this selection.")
     source("min_q1.parquet + min_machine_day.parquet", SCRIPT, "labels: Full (Jan-Jun); money columns: " + sel["preset"])
     st.markdown(f"**{z['zone']} machines earn {z['theo_gap_vs_same_games_elsewhere_min']:.0%}-"
@@ -117,10 +117,9 @@ def _details_min(sel):
     if len(m):
         w = m.assign(week=pd.to_datetime(m.gaming_date).dt.to_period("W-SUN").dt.start_time).groupby("week")[["house_win_usd", "theo_usd"]].sum()
         st.caption("Weekly casino win vs expected win (dollars per week), selected period")
-        st.line_chart(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), color=[ORANGE, BLUE],
-                      x_label="Week starting", y_label="Dollars per week")
+        T.line(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), "week", ["Casino win ($)", "Expected win ($)"], "Week starting", "Dollars per week")
     else:
-        st.info("Not on floor in this period.")
+        T.info("Not on floor in this period.")
     st.caption("Verdict wording is minimum-version rules; 'not enough evidence' (Mixed) is an allowed answer. Peer comparison "
                "uses same-config machines (leave-one-out median); no confidence interval yet.")
     source("min_q1.parquet + min_machine_day.parquet", SCRIPT, "labels: Full (Jan-Jun); chart: " + sel["preset"])
@@ -139,10 +138,9 @@ def _demand_min(sel):
     ws = pd.to_datetime(w.week_start)
     ww = w[(w.n_days == 7) & (ws >= pd.Timestamp(sel["start"])) & (ws + pd.Timedelta(days=6) <= pd.Timestamp(sel["end"]))]
     if ww.empty:
-        st.info("No complete Monday-Sunday week fits inside this range; widen it to see the weekly trend.")
+        T.info("No complete Monday-Sunday week fits inside this range; widen it to see the weekly trend.")
     else:
-        st.line_chart(ww.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), color=[BLUE],
-                      x_label="Week starting", y_label="Money wagered per week ($)")
+        T.line(ww.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), "week_start", ["Weekly coin-in ($)"], "Week starting", "Money wagered per week ($)")
         show(ww, {"week_start": ("Week starting", "date"), "coin_in_usd": ("Money wagered", "usd"), "theo_usd": ("Expected casino win", "usd"),
                   "occupied_machine_hours": ("Machine-hours in use", "int"), "entries": ("Door entries counted", "int"),
                   "counter_coverage_share": ("Door counters online", "pct"), "events": ("Events", "text"), "holidays": ("Holidays", "text")})
@@ -159,7 +157,7 @@ def _demand_min(sel):
     st.caption("Upper bound: downtime hours x the machine's own theo per available hour; guests may play elsewhere. "
                f"Full-period figure: ${f3['lost_theo_usd_upper_bound']:,.0f} lost theo, {f3['downtime_share_of_scheduled']:.2%} of scheduled hours.")
     p = d.pivot_table(index="week", columns="manufacturer", values="lost", aggfunc="sum").fillna(0)
-    st.bar_chart(p, x_label="Week starting", y_label="Expected win lost to downtime ($)")
+    T.bars(p, "week", list(p.columns), "Week starting", "Expected win lost to downtime ($)")
     show(d.groupby("manufacturer")[["downtime_hours", "lost"]].sum().reset_index(),
          {"manufacturer": ("Manufacturer", "text"), "downtime_hours": ("Hours down", "int"), "lost": ("Expected win lost", "usd")})
     source("min_machine_day.parquet", SCRIPT, f"{sel['preset']}, bank: {sel['bank']}")
@@ -180,7 +178,7 @@ def _players_min(sel):
     st.caption("Player net = payout minus wager (opposite sign of house win). Carded play only. Groups of 10+ players. "
                f"Full-period concentration: the top 10% of {f4['tracked_players']:,} tracked players hold {f4['top10pct_share_of_theo']:.0%} of theo.")
     agg = t.groupby("month")[["wagered_usd", "paid_back_usd", "net_usd", "theo_usd"]].sum()
-    st.bar_chart(agg[["net_usd"]].rename(columns={"net_usd": "Player net ($)"}), color=[ORANGE], x_label="Month", y_label="Player net, wins minus losses ($)")
+    T.bars(agg.reset_index(), "month", "net_usd", "Month", "Player net, wins minus losses ($)", color=T.NAVY)
     show(t, {"month": ("Month", "month"), "tier": ("Loyalty tier", "text"), "players": ("Players", "int"), "wagered_usd": ("Wagered", "usd"),
              "paid_back_usd": ("Paid back", "usd"), "net_usd": ("Players' net", "usd"), "theo_usd": ("Expected casino win", "usd")})
     source("min_q4.parquet", SCRIPT, f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}")
@@ -191,8 +189,7 @@ def _players_min(sel):
     st.header(f"Comps cost {usd(c.comp_cost_usd.sum())} here; comp cost / theo went {first:.2%} (Jan) to {last:.2%} (Jun)")
     st.caption("Comp cost is cost to the house, already inside POS cost of goods: counted once. Reinvestment = comp cost / theo. "
                "Why it changed is not yet tested.")
-    st.line_chart(cm[["Comp cost / theo"]].rename(columns={"Comp cost / theo": "Comp cost as share of expected win"}), color=[BLUE],
-                  x_label="Month", y_label="Comp cost / expected win")
+    T.line(cm, "month", ["Comp cost / theo"], "Month", "Comp cost / expected win", fmt=".1%")
     show(c, {"month": ("Month", "month"), "tier": ("Loyalty tier", "text"), "players": ("Players", "int"), "comp_cost_usd": ("Comp cost to casino", "usd"),
              "comp_face_value_usd": ("Comp menu value (not cash)", "usd"), "theo_usd": ("Expected casino win", "usd"),
              "comp_cost_to_theo_ratio": ("Comp cost / expected win", "pct2"), "comps_redeemed": ("Comps redeemed", "int"),
@@ -225,9 +222,9 @@ def _model_min(sel):
     names = ["Actual", "Weekday model", "Constant baseline (Jan-Apr average)"]
     chart = alt.Chart(long).mark_line().encode(
         x=alt.X("gaming_date:T", title="Day (May-Jun 2025)"), y=alt.Y("Dollars:Q", title="Daily money wagered ($)"),
-        color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=["#000000", BLUE, ORANGE]), legend=alt.Legend(title="Legend", orient="top")),
+        color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=[T.NAVY, T.OKABE_ITO[0], T.OKABE_ITO[1]]), legend=alt.Legend(title="Legend", orient="top")),
         strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=names, range=[[1, 0], [6, 3], [2, 2]]), legend=None))
-    st.altair_chart(chart, width="stretch")
+    T.altair(chart)
     source("min_model.parquet", SCRIPT, "test May-Jun 2025, floor daily coin-in $")
     st.divider()
     st.subheader("Action catalogue with budget cost (guide formula)")
@@ -315,7 +312,12 @@ def overview(sel):
             s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the floor rate for the same games"
         if dn:
             s2 += f"; downtime explains little ({dn['share_of_scheduled']:.2%} of hours)"
-        st.info("**Answer in brief.**\n\n" + f"{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}.\n\n" + f"{s2}.")
+        zi = zn.get(top, {}).get("zone_index_vs_floor")
+        T.kpis([("Truly bad, of the GM's 10", f"{tv['gm10_truly_bad']} of {tv['gm10_n']}"),
+                (f"In {top}", f"{tv['gm10_in_b40']} of {tv['gm10_n']}"),
+                ("Zone rate vs floor, same games", f"{zi:.0%}" if zi is not None else "n/a"),
+                ("Downtime, share of hours", f"{dn['share_of_scheduled']:.2%}" if dn else "n/a")])
+        T.answer_box("**Answer in brief.**", f"{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}.", f"{s2}.")
         st.markdown("**The GM's list:** the 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025, with the team's verdicts. "
                     "A low total can come from luck, location or a leak; each row tests all three.")
         g = v[v.in_manager_bottom10].sort_values("manager_rank").copy()
@@ -330,13 +332,13 @@ def overview(sel):
         g["luck_test"] = g.luck_score.map(luck_result)
         show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
                  "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd_nf"),
-                 "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "text"),
+                 "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "verdict"),
                  "luck_score": ("Luck percentile", "pct1"), "luck_test": ("Luck as the explanation", "text"),
                  "reason": ("Why", "text"), "confidence": ("Confidence", "text")}, wrap=True)
         st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck. Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%. "
                    "Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); the chart on Machine Details shows a 500-replay sample.")
         if not full_scope:
-            st.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
+            T.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
                     "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
         source("team/p2_verdicts.parquet + min_machine_day.parquet", "Bharath's notebook (p2) + " + SCRIPT,
                "verdicts: Full (Jan-Jun); money columns: " + sel["preset"])
@@ -350,12 +352,15 @@ def overview(sel):
         vv = v if sel["bank"] == ALL else v[v.bank_id == sel["bank"]]
         cnt = vv.verdict.value_counts().rename_axis("Verdict").reset_index(name="Machines")
         if len(cnt):
-            st.bar_chart(cnt.set_index("Verdict"), color=[BLUE], x_label="Verdict", y_label="Machines")
+            kc = dict(zip(cnt.Verdict, cnt.Machines))
+            T.takeaway(f"{kc.get('Healthy', 0)} of {len(vv)} machines are Healthy and {kc.get('Bad spot', 0)} are Bad spot; none are Truly bad or Broken."
+                       if not kc.get("Truly bad") and not kc.get("Broken") else f"{kc.get('Healthy', 0)} of {len(vv)} machines are Healthy.")
+            T.bars(cnt, "Verdict", "Machines", "Verdict", "Machines", fmt=",.0f", horizontal=True, height=240)
         st.caption("Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts). 'Truly bad' and "
                    "'Broken' appear nowhere on the floor in this data.")
         if sel["bank"] != ALL:
             with st.expander(f"Machines in bank {sel['bank']} ({len(vv)})", expanded=True):
-                show(vv.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+                show(vv.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
                      "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Luck percentile", "pct"),
                      "in_manager_bottom10": ("In the GM's 10", "yesno")})
         _zone_evidence()
@@ -381,20 +386,23 @@ def _zone_evidence():
     st.subheader("Zone evidence")
     c1, c2 = st.columns(2)
     if z is not None:
-        c1.caption("How much each zone earns per available hour for the same games, compared with the floor rate (100% = floor rate)")
-        c1.bar_chart(z.set_index("zone_name")[["zone_index_vs_floor"]].rename(columns={"zone_index_vs_floor": "Zone earnings vs floor"}),
-                     color=[BLUE], x_label="Zone", y_label="Earnings per available hour vs floor", horizontal=True)
+        lo = z.sort_values("zone_index_vs_floor").iloc[0]
+        with c1:
+            T.takeaway(f"{lo.zone_name} earns {lo.zone_index_vs_floor:.0%} of the floor rate for the same games, the lowest of {len(z)} zones.")
+            st.caption("Earnings per available hour for the same games, compared with the floor rate (100% = floor rate)")
+            T.bars(z, "zone_name", "zone_index_vs_floor", "Zone", "Earnings vs floor rate (same games)", fmt=".0%", horizontal=True, height=280)
+    if b is not None:
+        bb = {r["period"][2:].strip(): r["b40_vs_rest"] for r in tfind("b40_closure") or []}
+        with c2:
+            if len(bb) == 3:
+                k = list(bb)
+                T.takeaway(f"Back Forty earned {bb[k[0]]:.0%} of the rest of the floor before the walkway closure, {bb[k[1]]:.0%} during it and {bb[k[2]]:.0%} after.")
+            st.caption("Back Forty vs the rest of the floor around the closure (100% = same as the rest). A dip while the walkway was closed points to location.")
+            show(b, {"period": ("Period", "text"), "b40_theo_per_hour": ("Back Forty expected win per hour", "usd"),
+                     "rest_theo_per_hour": ("Rest of floor", "usd"), "b40_vs_rest": ("Back Forty vs rest", "pct")})
+    if z is not None:
         show(z, {"zone_name": ("Zone", "text"), "machines": ("Machines", "int"), "zone_index_vs_floor": ("Earnings vs floor", "pct"),
                  "theo_per_hour_usd": ("Expected win per hour", "usd"), "avg_occupancy": ("Seats used", "pct")})
-    if b is not None:
-        c2.caption("The Back Forty vs the rest of the floor around the walkway closure (100% = same as the rest)")
-        show(b, {"period": ("Period", "text"), "b40_theo_per_hour": ("Back Forty expected win per hour", "usd"),
-                 "rest_theo_per_hour": ("Rest of floor", "usd"), "b40_vs_rest": ("Back Forty vs rest", "pct")})
-        bb = {r["period"][2:].strip(): r["b40_vs_rest"] for r in tfind("b40_closure") or []}
-        if len(bb) == 3:
-            k = list(bb)
-            st.caption(f"Back Forty earned {bb[k[0]]:.0%} of the rest of the floor before the closure, {bb[k[1]]:.0%} during it and {bb[k[2]]:.0%} after. "
-                       "A dip while the walkway was closed points to location, not the machines.")
     source("team/p2_zone_index.parquet, team/p2_b40_closure_effect.parquet", "Bharath's notebook (p2)", "Full period; closure split as published by the team")
 
 
@@ -445,7 +453,7 @@ def budget_section(sel):
                     st.page_link(PAGE_OBJ[tgt], label=f"{nm}: see {tgt}")
                 ids = [m for tl in chosen[chosen.action_type_id == t].targets for m in re.findall(r"M-\d+", str(tl))]
                 if vv is not None and ids:
-                    show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Target machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+                    show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Target machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
                          "luck_score": ("Luck percentile", "pct"), "reason": ("Why", "text")}, wrap=True)
                 evidence(EVID_Q.get(t, ["Q1"]), title=f"Evidence for {nm}", expanded=True)
             pb = budget.payback(chosen)
@@ -479,13 +487,14 @@ def details(sel):
     vb = v if sel["bank"] == ALL else v[v.bank_id == sel["bank"]]
     if sel["bank"] != ALL:
         st.markdown(f"**Bank {sel['bank']}: {len(vb)} machines** (change the bank in the sidebar)")
-        show(vb.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "text"),
+        show(vb.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
              "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Luck percentile", "pct")})
     order = pd.concat([vb[vb.in_manager_bottom10].sort_values("manager_rank"), vb[~vb.in_manager_bottom10].sort_values("machine_id")])
     names = dict(zip(order.machine_id, order.machine_id + "  -  " + order.verdict + (np_where(order) )))
     mid = st.selectbox("Machine (the GM's 10 first)", list(order.machine_id), format_func=lambda m: names[m])
     r = v[v.machine_id == mid].iloc[0]
-    st.subheader(f"{mid}: {r.verdict} ({r.confidence.lower()} confidence)")
+    st.subheader(mid)
+    st.markdown(T.chip(r.verdict) + f" &nbsp; {r.confidence.lower()} confidence", unsafe_allow_html=True)
     st.write(r.reason)
     c = st.columns(4)
     c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
@@ -506,15 +515,16 @@ def details(sel):
     if sims is not None:
         s = sims[sims.machine_id == mid]
         if len(s):
-            hist = alt.Chart(s).mark_bar(color="#9ecae1").encode(
+            T.takeaway(f"Only {r.luck_score:.1%} of fair replays did as badly as {mid}'s actual result.")
+            hist = alt.Chart(s).mark_bar(color=T.SEAFOAM).encode(
                 x=alt.X("sim_house_win_usd:Q", bin=alt.Bin(maxbins=30), title=f"Simulated casino win over its time on the floor ({int(r.days_on_floor)} days) ($)"),
                 y=alt.Y("count()", title="Simulations (of 500)"))
             marks = pd.DataFrame({"x": [r.house_win_usd, r.theo_usd], "Line": ["Actual result", "Expected (theo)"]})
             rules = alt.Chart(marks).mark_rule(size=3).encode(
-                x="x:Q", color=alt.Color("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[ORANGE, "#000000"]),
+                x="x:Q", color=alt.Color("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[T.OKABE_ITO[3], T.NAVY]),
                                          legend=alt.Legend(title="Legend", orient="top")),
                 strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[[1, 0], [5, 4]]), legend=None))
-            st.altair_chart(hist + rules, width="stretch")
+            T.altair(hist + rules)
             st.caption(f"Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); this chart shows a 500-replay sample "
                        f"for a normal copy of this machine over the same {int(r.days_on_floor)} days it was on the floor. "
                        "If the actual line sits far left of the bars, luck alone is a poor explanation.")
@@ -541,8 +551,8 @@ def details(sel):
         if len(mw):
             w = mw.assign(week=pd.to_datetime(mw.gaming_date).dt.to_period("W-SUN").dt.start_time).groupby("week")[["house_win_usd", "theo_usd"]].sum()
             st.caption("Weekly casino win vs expected win (dollars per week), selected period")
-            st.line_chart(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), color=[ORANGE, BLUE],
-                          x_label="Week starting", y_label="Dollars per week")
+            T.takeaway(f"Over this selection the machine won {usd(w.house_win_usd.sum())} against {usd(w.theo_usd.sum())} expected.")
+            T.line(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), "week", ["Casino win ($)", "Expected win ($)"], "Week starting", "Dollars per week")
     st.caption("Verdict, reason and luck chance are for the full period (only scope precomputed). Downtime and the chart follow the period filter where noted.")
     source("team/p2_verdicts, p2_luck_sims, p2_move_effects, p1_downtime + min_machine_day.parquet", "Bharath/Aditi notebooks + " + SCRIPT, "Full (Jan-Jun) unless stated")
     evidence(["Q1", "Q3"], machine=mid, title=f"Evidence mentioning {mid} first, then Q1 and Q3 claims")
@@ -557,6 +567,8 @@ def demand(sel):
     if dem is None and dt is None:
         st.warning("Team demand and downtime files are pending; showing the minimum version.")
         return _demand_min(sel)
+    top = st.container()
+    chg, nclues = "n/a", "n/a"
     if dem is not None:
         dd = dem[(dem.gaming_date >= pd.Timestamp(sel["start"])) & (dem.gaming_date <= pd.Timestamp(sel["end"]))]
         day = dd.groupby("gaming_date").agg(coin_in_usd=("coin_in_usd", "sum"), traffic=("traffic_count", "sum"),
@@ -564,7 +576,7 @@ def demand(sel):
         ev = dd.dropna(subset=["event_name"]).groupby("gaming_date").event_name.agg(lambda x: "; ".join(sorted(set(x)))).reset_index()
         wk = _full_weeks(day.merge(ev, how="left", on="gaming_date"), sel["start"], sel["end"])
         if wk.empty:
-            st.info("No complete Monday-Sunday week fits inside this range; widen it to see the weekly trend.")
+            T.info("No complete Monday-Sunday week fits inside this range; widen it to see the weekly trend.")
         else:
             w = wk.groupby("week_start").agg(coin_in_usd=("coin_in_usd", "sum"), traffic=("traffic", "sum"), counted=("counted", "sum"),
                                              zones=("zones", "sum"), events=("event_name", lambda x: "; ".join(sorted(set("; ".join(x.dropna()).split("; ")) - {""})))).reset_index()
@@ -572,16 +584,17 @@ def demand(sel):
             head = "Weekly coin-in"
             if len(w) >= 8:
                 a, b = w.head(4).coin_in_usd.mean(), w.tail(4).coin_in_usd.mean()
+                chg = f"{b / a - 1:+.1%}"
                 head = f"Weekly coin-in changed {b / a - 1:+.1%} from the first 4 to the last 4 complete weeks in this range"
             st.header(head)
-            st.line_chart(w.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), color=[BLUE],
-                          x_label="Week starting", y_label="Money wagered per week ($)")
+            T.line(w.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), "week_start", ["Weekly coin-in ($)"], "Week starting", "Money wagered per week ($)")
             show(w, {"week_start": ("Week starting", "date"), "coin_in_usd": ("Money wagered", "usd"), "traffic": ("Door entries counted", "int"),
                      "coverage": ("Door counters online", "pct"), "events": ("Events that week", "text")})
             st.caption("Whole floor, all 7 zones (bank filter does not apply). Only complete Monday-Sunday weeks inside the range. "
                        "Entries are door counts, not unique visitors; a missing counter reading is offline, not zero, and is excluded (see coverage).")
         zz = dd.groupby("zone_id").coin_in_usd.sum().sort_values()
-        st.bar_chart(zz.rename("Money wagered ($)"), color=[BLUE], x_label="Zone", y_label="Money wagered in selection ($)")
+        T.takeaway(f"{zz.idxmax()} draws the most play: {usd(zz.max())} wagered in this selection.")
+        T.bars(zz.rename("Money wagered ($)").rename_axis("zone").reset_index(), "zone", "Money wagered ($)", "Zone", "Money wagered in selection ($)", height=260)
         source("team/p3_demand.parquet", "Nikita's notebook (p3)", f"{sel['preset']}, floor-wide")
         evidence(["Q2"], title="Evidence: Q2 claims on what changed in demand")
     else:
@@ -599,7 +612,7 @@ def demand(sel):
     x = x.assign(month=pd.to_datetime(x.gaming_date).dt.strftime("%Y-%m"))
     pv = x.pivot_table(index="month", columns="manufacturer", values="lost_theo_usd", aggfunc="sum").fillna(0)
     if len(pv):
-        st.bar_chart(pv, x_label="Month", y_label="Expected win lost to downtime ($)")
+        T.bars(pv, "month", list(pv.columns), "Month", "Expected win lost to downtime ($)")
     c1, c2 = st.columns(2)
     with c1:
         show(x.groupby("manufacturer").agg(h=("available_hours", "count"), lost=("lost_theo_usd", "sum")).reset_index().assign(
@@ -614,12 +627,16 @@ def demand(sel):
         l = lc[(lc.gaming_date >= pd.Timestamp(sel["start"])) & (lc.gaming_date <= pd.Timestamp(sel["end"]))]
         if sel["bank"] != ALL:
             l = l[l.machine_id.map(banks) == sel["bank"]]
+        nclues = f"{len(l)}"
         st.markdown(f"**Leak clues in this selection: {len(l)} on {l.machine_id.nunique()} machines.** These are leads to inspect, not accusations.")
         if len(l):
             show(l.groupby("rule_failed").agg(n=("machine_id", "count"), m=("machine_id", "nunique")).reset_index(),
                  {"rule_failed": ("Rule that flagged it", "text"), "n": ("Flags", "int"), "m": ("Machines", "int")})
     source("team/p1_downtime.parquet, team/p1_leak_clues.parquet", "Aditi's notebook (p1)", f"{sel['preset']}, bank {sel['bank']}")
     evidence(["Q3"], title="Evidence: Q3 claims on downtime")
+    with top:
+        T.kpis([("Coin-in, last 4 vs first 4 full weeks", chg), ("Hours down", f"{hrs:,.0f}"),
+                ("Expected win lost, upper bound", usd(x.lost_theo_usd.sum())), ("Leak clues", nclues)])
 
 
 def players(sel):
@@ -628,6 +645,8 @@ def players(sel):
         st.warning("Team player file is pending; showing the minimum version.")
         return _players_min(sel)
     ms = snap_months(sel)
+    top = st.container()
+    kp = [("Wagered", "n/a"), ("Won back", "n/a"), ("Players' net", "n/a"), ("Comp cost", "n/a")]
     c1, c2 = st.columns(2)
     ages = c1.radio("Age band", [ALL] + sorted(p.age_band.dropna().unique()), horizontal=True)
     regs = c2.radio("Home region", [ALL] + sorted(p.home_region.dropna().unique()), horizontal=True)
@@ -636,13 +655,14 @@ def players(sel):
         if val != ALL:
             x = x[x[col] == val]
     if x.empty:
-        st.info("No guest group of 10 or more players matches these filters.")
+        T.info("No guest group of 10 or more players matches these filters.")
     else:
         st.header(f"Tracked players wagered {usd(x.wagered_usd.sum())}, won back {usd(x.won_back_usd.sum())}, net {usd(x.net_usd.sum())}")
         st.caption(f"{int(x.player_count.sum()):,} player-months in groups of 10+. Net = won back minus wagered (opposite sign of casino win). "
                    "Carded play only. Individual players are never shown.")
+        kp[0:3] = [("Wagered", usd(x.wagered_usd.sum())), ("Won back", usd(x.won_back_usd.sum())), ("Players' net", usd(x.net_usd.sum()))]
         mo = x.groupby("month").agg(w=("wagered_usd", "sum"), b=("won_back_usd", "sum"), n=("net_usd", "sum"), pc=("player_count", "sum")).reset_index()
-        st.bar_chart(mo.set_index("month")[["n"]].rename(columns={"n": "Players' net ($)"}), color=[ORANGE], x_label="Month", y_label="Players' net, wins minus losses ($)")
+        T.bars(mo, "month", "n", "Month", "Players' net, wins minus losses ($)", color=T.NAVY)
         show(mo, {"month": ("Month", "month"), "pc": ("Player-months", "int"), "w": ("Wagered", "usd"), "b": ("Won back", "usd"), "n": ("Players' net", "usd")})
     cn = team("p3_concentration")
     if cn is not None:
@@ -653,12 +673,14 @@ def players(sel):
         names = ["Actual: share of all net losses", "If losses were spread evenly"]
         ch = alt.Chart(long).mark_line(point=True).encode(
             x=alt.X("top_pct:Q", title="Top share of tracked players, ranked by loss (%)"), y=alt.Y("share:Q", title="Share of total net loss", axis=alt.Axis(format="%")),
-            color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=[ORANGE, "#000000"]), legend=alt.Legend(title="Legend", orient="top")),
+            color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=[T.OKABE_ITO[3], T.NAVY]), legend=alt.Legend(title="Legend", orient="top")),
             strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=names, range=[[1, 0], [5, 4]]), legend=None))
-        st.altair_chart(ch, width="stretch")
         t10 = cn[cn.top_pct == 10].share_of_net_loss
         if len(t10):
-            st.caption(f"The 10% of tracked players with the largest losses account for {t10.iloc[0]:.0%} of all net losses. Shares above 100% appear "
+            T.takeaway(f"The 10% of tracked players with the largest losses account for {t10.iloc[0]:.0%} of all net losses.")
+        T.altair(ch)
+        if len(t10):
+            st.caption(f"Shares above 100% appear "
                        "because the remaining players, as a group, won money. Full period, all tracked players (filters do not apply).")
         source("team/p3_concentration.parquet", "Nikita's notebook (p3)", "Full period, all tracked players")
     source("team/p3_players.parquet", "Nikita's notebook (p3)", f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}, age {ages}, region {regs}")
@@ -666,16 +688,21 @@ def players(sel):
     st.divider()
     cp = team("p1_comps")
     if cp is None:
+        with top:
+            T.kpis(kp)
         return
     cc = cp[cp.month.isin(ms)]
     if sel["tier"] != ALL:
         cc = cc[cc.tier == sel["tier"]]
     mq5, _ = load("min_q5.parquet")
+    kp[3] = ("Comp cost", usd(cc.comp_cost_usd.sum()))
+    with top:
+        T.kpis(kp)
     st.header(f"Comps cost the casino {usd(cc.comp_cost_usd.sum())} in this selection")
     st.caption("Comp cost is cost to the house, already inside POS cost of goods: counted once. Age and region filters do not apply to comps.")
     pv = cc.pivot_table(index="month", columns="tier", values="comp_cost_usd", aggfunc="sum")
     if len(pv):
-        st.bar_chart(pv, x_label="Month", y_label="Comp cost to the casino ($)")
+        T.bars(pv, "month", list(pv.columns), "Month", "Comp cost to the casino ($)")
     show(cc.groupby("month").agg(c=("comp_cost_usd", "sum"), e=("points_earned", "sum"), r=("points_redeemed", "sum")).reset_index(),
          {"month": ("Month", "month"), "c": ("Comp cost", "usd"), "e": ("Points earned", "int"), "r": ("Points redeemed", "int")})
     if mq5 is not None:
@@ -683,8 +710,10 @@ def players(sel):
         if sel["tier"] != ALL:
             q = q[q.tier == sel["tier"]]
         r = q.groupby("month")[["comp_cost_usd", "theo_usd"]].sum()
-        st.line_chart((r.comp_cost_usd / r.theo_usd).rename("Comp cost / expected win").to_frame(), color=[BLUE], x_label="Month",
-                      y_label="Comp cost / expected win")
+        rr = r.comp_cost_usd / r.theo_usd
+        if len(rr) > 1:
+            T.takeaway(f"Comp cost was {rr.iloc[0]:.2%} of expected win in {rr.index[0]} and {rr.iloc[-1]:.2%} in {rr.index[-1]}.")
+        T.line((r.comp_cost_usd / r.theo_usd).rename("Comp cost / expected win").to_frame(), "month", ["Comp cost / expected win"], "Month", "Comp cost / expected win", fmt=".1%")
         st.caption("Reinvestment ratio from the minimum version's player table (comp cost / expected win); the team comps file has no expected-win column.")
     source("team/p1_comps.parquet + min_q5.parquet", "Aditi's notebook (p1) + " + SCRIPT, f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}")
     evidence(["Q5"], title="Evidence: Q5 claims on comps")
@@ -696,6 +725,9 @@ def model_plan(sel):
         st.warning("Team forecast files are pending; showing the minimum version.")
         return _model_min(sel)
     best = mm.sort_values("mae_usd").iloc[0]
+    bmae = mm[mm.model_name.str.startswith("baseline")].mae_usd.iloc[0]
+    T.kpis([("Model average miss per day", usd(best.mae_usd)), ("Constant baseline miss per day", usd(bmae)),
+            ("Improvement over baseline", f"{1 - best.mae_usd / bmae:.0%}"), ("Test days (May to Jun)", f"{tm['test_days']}")])
     st.header(f"{best.model_name.replace('_', ' ').capitalize()} misses by {usd(best.mae_usd)} a day on May-June, against {usd(mm[mm.model_name.str.startswith('baseline')].mae_usd.iloc[0])} for the constant baseline")
     st.caption(f"Train {tm['train']}, test {tm['test']} ({tm['test_days']} days), split by time; models frozen before testing; no later-published data used. "
                "Fixed dates, unaffected by the sidebar filters. The forecast file's own predictions reproduce "
@@ -707,9 +739,9 @@ def model_plan(sel):
     long = t.melt("gaming_date", var_name="Line", value_name="Dollars")
     chart = alt.Chart(long).mark_line().encode(
         x=alt.X("gaming_date:T", title="Day (May-Jun 2025)"), y=alt.Y("Dollars:Q", title="Daily money wagered ($)"),
-        color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=["#000000", BLUE, ORANGE]), legend=alt.Legend(title="Legend", orient="top")),
+        color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=[T.NAVY, T.OKABE_ITO[0], T.OKABE_ITO[1]]), legend=alt.Legend(title="Legend", orient="top")),
         strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=names, range=[[1, 0], [6, 3], [2, 2]]), legend=None))
-    st.altair_chart(chart, width="stretch")
+    T.altair(chart)
     f = findings("model")
     if f:
         st.caption(f"Independent check: my minimum weekday-average model gives {usd(f['mae_model_usd'])}, matching the team's weekday_average row. "
@@ -733,6 +765,8 @@ def evidence_page(sel):
     if c is None:
         st.warning("Pending: the merged claims table is not available yet.")
         return
+    T.kpis([("Claims", f"{len(c)}"), ("Questions covered", f"{c.question.nunique()}"),
+            ("High confidence", f"{int((c.confidence.str.lower() == 'high').sum())}")])
     qs = st.multiselect("Question", sorted(c.question.unique()), default=sorted(c.question.unique()))
     src = st.multiselect("From", sorted(c.source.unique()), default=sorted(c.source.unique()))
     x = c[c.question.isin(qs) & c.source.isin(src)]

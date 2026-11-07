@@ -6,12 +6,14 @@ import importlib
 import streamlit as st
 
 # Reload our own modules on every run: a long-lived server process can otherwise keep stale versions after a deploy.
-for _m in ("validate_contracts", "budget", "common", "pages"):
+for _m in ("validate_contracts", "budget", "theme", "common", "pages"):
     importlib.reload(importlib.import_module(_m))
 from common import sidebar, header, footer  # noqa: E402
 import pages  # noqa: E402
+import theme  # noqa: E402
 
 st.set_page_config(page_title="The Gilded Ace - Decision Room", layout="wide")
+theme.apply()
 
 PAGES = {
     "Overview": ("Decision Room", "Which 10 machines would we replace, and what do we fund with $100,000?", ["team/p2_verdicts.parquet", "min_q1.parquet"]),

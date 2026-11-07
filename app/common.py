@@ -4,6 +4,7 @@ from datetime import date, datetime
 from pathlib import Path
 import pandas as pd
 import streamlit as st
+import theme as T
 
 ROOT = Path(__file__).resolve().parent.parent
 APP_DATA = ROOT / "app_data"
@@ -28,7 +29,7 @@ def sidebar() -> dict:
     """Draw the filters once and return the selection (stored in session_state)."""
     f = _filters()
     with st.sidebar:
-        st.header("Filters")
+        st.markdown('<div class="sb-title">Filters</div>', unsafe_allow_html=True)
         choice = st.selectbox("Period", list(PRESETS) + ["Custom range"])
         if choice == "Custom range":
             r = st.date_input("Dates", (START, END), min_value=START, max_value=END)
@@ -93,7 +94,7 @@ def header(title: str, takeaway: str, sel: dict, files: list[str]):
     for f in files:
         _, why = load(f)
         if why:
-            st.info(f"Pending: {why}. Showing the minimum version where one exists.")
+            T.info(f"Pending: {why}. Showing the minimum version where one exists.")
 
 
 # ---------- findings + live recompute helpers ----------
@@ -164,7 +165,7 @@ def usd(x) -> str:
 def _fmt(s: pd.Series, kind: str) -> pd.Series:
     f = {"usd": usd, "usd_nf": usd, "pct_nf": lambda x: f"{x:.0%}", "pct": lambda x: f"{x:.0%}", "pct1": lambda x: f"{x:.1%}", "int": lambda x: f"{int(x):,}",
          "num": lambda x: f"{x:,.1f}", "pct2": lambda x: f"{x:.2%}", "month": lambda x: f"{pd.Timestamp(str(x) + '-01'):%b %Y}", "yesno": lambda x: "Yes" if x else "No",
-         "date": lambda x: f"{pd.Timestamp(x):%b} {pd.Timestamp(x).day}", "text": str}[kind]
+         "date": lambda x: f"{pd.Timestamp(x):%b} {pd.Timestamp(x).day}", "text": str, "verdict": str}[kind]
     blank = NOT_ON_FLOOR if kind.endswith("_nf") else ""  # machines absent from the selected period read 'Not on floor', not blank
     return s.map(lambda x: blank if (x is None or (not isinstance(x, (list, str)) and pd.isna(x))) else f(x))
 
@@ -173,12 +174,13 @@ NOT_ON_FLOOR = "Not on floor in this period"
 
 
 def show(df: pd.DataFrame, spec: dict, wrap: bool = False):
-    """Display a table for a manager: spec = {column: (plain-English name, kind)}; kinds: usd pct pct1 int num yesno date text."""
+    """Display a table for a manager: spec = {column: (plain-English name, kind)}; kinds: usd pct pct1 int num yesno date month text verdict (verdict gets a labelled chip colour)."""
     out = pd.DataFrame({lab: _fmt(df[c], k) for c, (lab, k) in spec.items() if c in df.columns})
-    if wrap:  # st.table wraps long text fully (st.dataframe truncates cells); sorting is not needed for these short tables
-        st.table(out.reset_index(drop=True).style.hide(axis="index"))
-    else:
-        st.dataframe(out, hide_index=True, width="stretch")
+    sty = out.reset_index(drop=True).style.hide(axis="index")   # st.table: header, wrapping and chips are styled by app/theme.py
+    for lab, k in spec.values():
+        if k == "verdict" and lab in out.columns:
+            sty = sty.map(T.chip_css, subset=[lab])
+    st.table(sty)
 
 
 # ---------- team files, team findings, evidence ----------
