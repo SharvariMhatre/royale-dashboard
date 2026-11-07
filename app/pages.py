@@ -2,6 +2,7 @@
 import pandas as pd
 import streamlit as st
 import re
+import html
 
 import altair as alt
 import budget
@@ -307,21 +308,33 @@ def overview(sel):
         zn = {z["zone_name"]: z for z in (tfind("zones") or [])}
         top = tv["gm10_top_zone"]
         parts = ", ".join(f"{n} {k.lower()}" for k, n in sorted(tv["gm10"].items(), key=lambda kv: -kv[1]))
-        s2 = f"{tv['gm10_in_b40']} sit in {top}"
-        if top in zn:
-            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the floor rate for the same games"
-        if dn:
-            s2 += f"; downtime explains little ({dn['share_of_scheduled']:.2%} of hours)"
         zi = zn.get(top, {}).get("zone_index_vs_floor")
-        T.kpis([("Truly bad, of the GM's 10", f"{tv['gm10_truly_bad']} of {tv['gm10_n']}"),
-                (f"In {top}", f"{tv['gm10_in_b40']} of {tv['gm10_n']}"),
-                ("Zone rate vs floor, same games", f"{zi:.0%}" if zi is not None else "n/a"),
-                ("Downtime, share of hours", f"{dn['share_of_scheduled']:.2%}" if dn else "n/a")])
-        T.answer_box("**Answer in brief.**", f"{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}.", f"{s2}.")
-        st.markdown("**The GM's list:** the 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025, with the team's verdicts. "
-                    "A low total can come from luck, location or a leak; each row tests all three.")
+        s2 = f"{tv['gm10_in_b40']} of the {tv['gm10_n']} sit in **{top}**" + (f", which earns {zi:.0%} of the floor rate for the same games" if zi is not None else "")
+        if dn:
+            s2 += f". Downtime explains little ({dn['share_of_scheduled']:.2%} of scheduled hours)"
+        headline = ("Don't replace the 10. Fix the spot." if tv["gm10_truly_bad"] == 0
+                    else f"Replace {tv['gm10_truly_bad']} of the 10, not all of them.")
+        T.hero("Answer in brief", headline,
+               [f"**{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad machines:** {parts}.", s2 + "."],
+               [(f"{tv['gm10_truly_bad']} of {tv['gm10_n']}", "truly bad machines on the GM's list"),
+                (f"{tv['gm10_in_b40']} of {tv['gm10_n']}", f"sit in {top}"),
+                (f"{zi:.0%}" if zi is not None else "n/a", f"{top} rate vs floor, same games"),
+                (f"{dn['share_of_scheduled']:.2%}" if dn else "n/a", "of scheduled hours lost to downtime")])
+
         g = v[v.in_manager_bottom10].sort_values("manager_rank").copy()
         full_scope = sel["preset"].startswith("Full") and sel["bank"] == ALL
+        T.section("01", "The GM's 10, re-examined",
+                  "The 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025. A low total can come from luck, location or a leak; "
+                  "each card shows the team's verdict after testing all three. **Click a card to open its case file.**")
+        T.gm_cards([{"rank": int(r.manager_rank), "id": r.machine_id, "zone": r.zone_name, "verdict": r.verdict, "why": str(r.reason),
+                     "luck": f"{r.luck_score:.1%}", "days": int(r.days_on_floor)} for r in g.itertuples()])
+        st.caption("Luck pct = luck percentile: share of 10,000 fair replays per machine (run in Databricks, Spark) that did worse than reality; "
+                   "under 5% means unusually bad luck. Verdicts are for the full period (Jan-Jun).")
+        for p in tfind("same_slot") or []:
+            T.info(f"**Same slot counted twice.** {p['retired']} was retired on {p['date']} and {p['installed']} was installed that day in the "
+                   f"same slot ({p['location']}). Both are on the GM's list: the casino already replaced one machine there, and the replacement "
+                   "landed on the list too. Replacing doesn't fix a bad spot.")
+
         live = machine_day(sel)
         if live is not None:
             t = machine_totals(live)[["machine_id", "house_win_usd", "availability"]].rename(
@@ -330,34 +343,40 @@ def overview(sel):
         else:
             g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct
         g["luck_test"] = g.luck_score.map(luck_result)
-        show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
-                 "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd_nf"),
-                 "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "verdict"),
-                 "luck_score": ("Luck percentile", "pct1"), "luck_test": ("Luck as the explanation", "text"),
-                 "reason": ("Why", "text"), "confidence": ("Confidence", "text")}, wrap=True)
-        st.caption("Luck percentile: share of fair replays that did worse than reality; under 5% = unusually bad luck. Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%. "
-                   "Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); the chart on Machine Details shows a 500-replay sample.")
-        if not full_scope:
-            T.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
-                    "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
-        source("team/p2_verdicts.parquet + min_machine_day.parquet", "Bharath's notebook (p2) + " + SCRIPT,
-               "verdicts: Full (Jan-Jun); money columns: " + sel["preset"])
-        for p in tfind("same_slot") or []:
-            st.warning(f"**Same slot counted twice.** {p['retired']} was retired on {p['date']} and {p['installed']} was installed that day in the "
-                       f"same slot ({p['location']}). Both are in the GM's list, so one slot fills two places, and each has a short time on the floor.")
+        with st.expander("Full evidence table for the GM's 10 (money follows your period and bank filters)", expanded=not full_scope):
+            show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
+                     "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd_nf"),
+                     "avail_sel": ("Time available, selected period", "pct_nf"), "verdict": ("Verdict (full period)", "verdict"),
+                     "luck_score": ("Luck percentile", "pct1"), "luck_test": ("Luck as the explanation", "text"),
+                     "reason": ("Why", "text"), "confidence": ("Confidence", "text")}, wrap=True)
+            st.caption("Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%.")
+            if not full_scope:
+                T.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
+                       "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
+            source("team/p2_verdicts.parquet + min_machine_day.parquet", "Bharath's notebook (p2) + " + SCRIPT,
+                   "verdicts: Full (Jan-Jun); money columns: " + sel["preset"])
         with st.expander("What each verdict means (plain words)"):
             for k, w in VERDICT_WORDS.items():
                 st.markdown(f"- **{k}**: {w}")
-        st.subheader("All 310 machines, by verdict" + ("" if sel["bank"] == ALL else f" (bank {sel['bank']})"))
+
         vv = v if sel["bank"] == ALL else v[v.bank_id == sel["bank"]]
+        T.section("02", "The floor map: where the problem sits",
+                  f"All {len(v)} machines at their floor positions. Shape and colour show the verdict; **ringed** machines are the GM's 10; "
+                  "the dashed box is Back Forty." + ("" if sel["bank"] == ALL else f" Bank **{sel['bank']}** is highlighted."))
+        _floor_map(v, sel["bank"])
         cnt = vv.verdict.value_counts().rename_axis("Verdict").reset_index(name="Machines")
         if len(cnt):
             kc = dict(zip(cnt.Verdict, cnt.Machines))
             T.takeaway(f"{kc.get('Healthy', 0)} of {len(vv)} machines are Healthy and {kc.get('Bad spot', 0)} are Bad spot; none are Truly bad or Broken."
                        if not kc.get("Truly bad") and not kc.get("Broken") else f"{kc.get('Healthy', 0)} of {len(vv)} machines are Healthy.")
-            T.bars(cnt, "Verdict", "Machines", "Verdict", "Machines", fmt=",.0f", horizontal=True, height=240)
-        st.caption("Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts). 'Truly bad' and "
-                   "'Broken' appear nowhere on the floor in this data.")
+            cnt["order"] = cnt.Verdict.map({k: i for i, k in enumerate(T.VERDICT_ORDER)})
+            T.altair(alt.Chart(cnt).mark_bar().encode(
+                y=alt.Y("Verdict:N", sort=[k for k in T.VERDICT_ORDER if k in kc], title=None),
+                x=alt.X("Machines:Q", title="Machines"),
+                color=alt.Color("Verdict:N", scale=alt.Scale(domain=list(T.VERDICT_COLOR), range=list(T.VERDICT_COLOR.values())), legend=None),
+                tooltip=["Verdict", "Machines"]) + alt.Chart(cnt).mark_text(align="left", dx=4, color=T.NAVY, fontWeight=600).encode(
+                y=alt.Y("Verdict:N", sort=[k for k in T.VERDICT_ORDER if k in kc]), x="Machines:Q", text="Machines:Q"), height=220)
+        st.caption("Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts).")
         if sel["bank"] != ALL:
             with st.expander(f"Machines in bank {sel['bank']} ({len(vv)})", expanded=True):
                 show(vv.sort_values("house_win_usd"), {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
@@ -379,36 +398,89 @@ VERDICT_WORDS = {
 }
 
 
+def _floor_map(v: pd.DataFrame, bank: str):
+    d = v.copy()
+    d["gm10"] = d.in_manager_bottom10.map({True: "Yes", False: "No"})
+    d["focus"] = True if bank == ALL else (d.bank_id == bank)
+    dom = [k for k in T.VERDICT_ORDER if k in set(d.verdict)]
+    sc_x = alt.Scale(domain=[d.x.min() - 6, d.x.max() + 6], nice=False)
+    sc_y = alt.Scale(domain=[d.y.max() + 10, d.y.min() - 8], nice=False)  # flipped so the plan reads top-down
+    tip = [alt.Tooltip("machine_id:N", title="Machine"), alt.Tooltip("zone_name:N", title="Zone"), alt.Tooltip("bank_id:N", title="Bank"),
+           alt.Tooltip("verdict:N", title="Verdict"), alt.Tooltip("house_win_usd:Q", title="Casino win", format="$,.0f"),
+           alt.Tooltip("luck_score:Q", title="Luck percentile", format=".1%"), alt.Tooltip("gm10:N", title="On the GM's list")]
+    zb = d[d.zone_name == "Back Forty"]
+    layers = []
+    if len(zb):
+        box = pd.DataFrame([{"x": zb.x.min() - 3.5, "x2": zb.x.max() + 3.5, "y": zb.y.min() - 4, "y2": zb.y.max() + 3.5}])
+        layers.append(alt.Chart(box).mark_rect(fill=T.SEAFOAM, fillOpacity=0.25, stroke=T.TEAL_DARK, strokeDash=[6, 4], strokeWidth=2)
+                      .encode(x=alt.X("x:Q", scale=sc_x, axis=None), x2="x2", y=alt.Y("y:Q", scale=sc_y, axis=None), y2="y2"))
+    pts = alt.Chart(d).mark_point(filled=True, size=70, strokeWidth=0).encode(
+        x=alt.X("x:Q", scale=sc_x, axis=None), y=alt.Y("y:Q", scale=sc_y, axis=None),
+        color=alt.Color("verdict:N", title="Verdict", scale=alt.Scale(domain=dom, range=[T.VERDICT_COLOR[k] for k in dom])),
+        shape=alt.Shape("verdict:N", title="Verdict", scale=alt.Scale(domain=dom, range=[T.VERDICT_SHAPE[k] for k in dom])),
+        opacity=alt.condition("datum.focus", alt.value(0.95), alt.value(0.15)), tooltip=tip)
+    ring = alt.Chart(d[d.in_manager_bottom10]).mark_point(size=360, filled=False, color=T.NAVY, strokeWidth=2.2).encode(
+        x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), tooltip=tip)
+    zl = d.groupby("zone_name").agg(x=("x", "mean"), y=("y", "min")).reset_index()
+    zl["y"] = zl.y - 4.5 - (zl.zone_name == "Back Forty") * 3
+    lab = alt.Chart(zl).mark_text(fontWeight=700, fontSize=12, color=T.NAVY).encode(
+        x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), text="zone_name:N")
+    ch = alt.layer(*layers, pts, ring, lab).configure_legend(orient="top", symbolSize=110, labelFontSize=12, titleFontSize=12)
+    st.altair_chart(ch.properties(height=520), theme=None, width="stretch")
+    st.caption("Positions from the floor plan (floor_locations x/y; current spot for each machine). Hover a machine for its numbers. "
+               "source: team/p2_verdicts.parquet; script: Bharath's notebook (p2).")
+
+
 def _zone_evidence():
     z, b = team("p2_zone_index"), team("p2_b40_closure_effect")
     if z is None and b is None:
         return
-    st.subheader("Zone evidence")
-    c1, c2 = st.columns(2)
+    T.section("03", "Why the zone, not the machines", "Two independent checks: the same games earn less in Back Forty, "
+              "and Back Forty's share of play fell while its walkway was closed, then recovered.")
+    c1, c2 = st.columns(2, gap="large")
     if z is not None:
         lo = z.sort_values("zone_index_vs_floor").iloc[0]
+        zz = z.assign(flag=z.zone_name.eq(lo.zone_name).map({True: "Lowest", False: "Other zones"}))
         with c1:
             T.takeaway(f"{lo.zone_name} earns {lo.zone_index_vs_floor:.0%} of the floor rate for the same games, the lowest of {len(z)} zones.")
-            st.caption("Earnings per available hour for the same games, compared with the floor rate (100% = floor rate)")
-            T.bars(z, "zone_name", "zone_index_vs_floor", "Zone", "Earnings vs floor rate (same games)", fmt=".0%", horizontal=True, height=280)
+            base = alt.Chart(zz).encode(y=alt.Y("zone_name:N", sort=list(zz.sort_values("zone_index_vs_floor").zone_name), title=None))
+            bars_ = base.mark_bar(height=18).encode(
+                x=alt.X("zone_index_vs_floor:Q", title="Earnings vs floor rate, same games (100% = floor)", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1.3])),
+                color=alt.Color("flag:N", scale=alt.Scale(domain=["Lowest", "Other zones"], range=[T.OKABE_ITO[1], T.NAVY]), legend=None),
+                tooltip=[alt.Tooltip("zone_name:N", title="Zone"), alt.Tooltip("zone_index_vs_floor:Q", title="vs floor", format=".0%")])
+            txt = base.mark_text(align="left", dx=4, color=T.NAVY, fontWeight=600).encode(x="zone_index_vs_floor:Q", text=alt.Text("zone_index_vs_floor:Q", format=".0%"))
+            rule = alt.Chart(pd.DataFrame({"x": [1.0]})).mark_rule(color=T.TEAL_DARK, strokeDash=[4, 3], size=2).encode(x="x:Q")
+            T.altair(bars_ + txt + rule, height=280)
+            st.caption("Dashed line = the floor rate. Bar labels carry the value; the lowest zone is also named in the takeaway.")
     if b is not None:
-        bb = {r["period"][2:].strip(): r["b40_vs_rest"] for r in tfind("b40_closure") or []}
+        bb = b.copy()
+        bb["Period"] = bb.period.str[2:].str.strip().str.capitalize()
         with c2:
-            if len(bb) == 3:
-                k = list(bb)
-                T.takeaway(f"Back Forty earned {bb[k[0]]:.0%} of the rest of the floor before the walkway closure, {bb[k[1]]:.0%} during it and {bb[k[2]]:.0%} after.")
-            st.caption("Back Forty vs the rest of the floor around the closure (100% = same as the rest). A dip while the walkway was closed points to location.")
+            k = list(bb.Period)
+            if len(k) == 3:
+                T.takeaway(f"Back Forty earned {bb.b40_vs_rest.iloc[0]:.0%} of the rest of the floor before the walkway closure, "
+                           f"{bb.b40_vs_rest.iloc[1]:.0%} during it and {bb.b40_vs_rest.iloc[2]:.0%} after.")
+            enc = dict(x=alt.X("Period:N", sort=k, title=None, axis=alt.Axis(labelAngle=0)),
+                       y=alt.Y("b40_vs_rest:Q", title="Back Forty vs rest of floor", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1])))
+            ln = alt.Chart(bb).mark_line(color=T.NAVY, strokeWidth=3, point=alt.OverlayMarkDef(size=140, filled=True, color=T.NAVY)).encode(
+                **enc, tooltip=[alt.Tooltip("Period:N"), alt.Tooltip("b40_vs_rest:Q", title="vs rest", format=".0%")])
+            lb = alt.Chart(bb).mark_text(dy=-16, fontSize=15, fontWeight=800, color=T.NAVY).encode(**enc, text=alt.Text("b40_vs_rest:Q", format=".0%"))
+            T.altair(ln + lb, height=280)
+            st.caption("Expected win per available hour in Back Forty divided by the rest of the floor, before / during / after the closure "
+                       "(100% = same as the rest). A dip while access was cut points to location.")
+    with st.expander("Zone and closure tables"):
+        if z is not None:
+            show(z, {"zone_name": ("Zone", "text"), "machines": ("Machines", "int"), "zone_index_vs_floor": ("Earnings vs floor", "pct"),
+                     "theo_per_hour_usd": ("Expected win per hour", "usd"), "avg_occupancy": ("Seats used", "pct")})
+        if b is not None:
             show(b, {"period": ("Period", "text"), "b40_theo_per_hour": ("Back Forty expected win per hour", "usd"),
                      "rest_theo_per_hour": ("Rest of floor", "usd"), "b40_vs_rest": ("Back Forty vs rest", "pct")})
-    if z is not None:
-        show(z, {"zone_name": ("Zone", "text"), "machines": ("Machines", "int"), "zone_index_vs_floor": ("Earnings vs floor", "pct"),
-                 "theo_per_hour_usd": ("Expected win per hour", "usd"), "avg_occupancy": ("Seats used", "pct")})
     source("team/p2_zone_index.parquet, team/p2_b40_closure_effect.parquet", "Bharath's notebook (p2)", "Full period; closure split as published by the team")
 
 
 def budget_section(sel):
-    st.divider()
-    st.header("$100,000 budget builder")
+    T.section("04", "The $100,000 plan", "Pick up to 3 action types from the team's proposals. Costs are recomputed with the guide formula; "
+              "the meter enforces the budget. Keeping money is a valid answer.")
     q6, _ = load("min_q6.parquet")
     props, cat = None, None
     try:
@@ -418,8 +490,7 @@ def budget_section(sel):
     except Exception as e:  # never break the page over the builder
         st.caption(f"Team proposals could not be loaded ({type(e).__name__}).")
     if props is not None and len(props):
-        st.caption("Options come from the team's action files, with their own benefit ranges. Costs are recomputed with the guide formula; "
-                   "up to 3 action types and $100,000 are enforced. Ranges are the teams' estimates, not guarantees; keeping money is allowed.")
+        st.caption("Options come from the team's action files, with their own benefit ranges. Ranges are the teams' estimates, not guarantees.")
         lab = lambda i: (f"{props.source[i][:2].upper()} | {cat.loc[props.action_type_id[i], 'name']} x{int(props.quantity[i])} | "
                          f"cost {usd(props.cost_recomputed_usd[i])} | benefit {usd(props.expected_benefit_usd[i])} "
                          f"({usd(props.low_estimate_usd[i])} to {usd(props.high_estimate_usd[i])})")
@@ -437,12 +508,10 @@ def budget_section(sel):
                   "cost_recomputed_usd": ("Cost", "usd"), "expected_benefit_usd": ("Expected benefit", "usd"),
                   "low_estimate_usd": ("Low", "usd"), "high_estimate_usd": ("High", "usd"), "confidence": ("Confidence", "text"),
                   "how_to_measure": ("How we would know it worked", "text")})
-            left = 100000 - cost
-            c = st.columns(4)
-            c[0].metric("Spent", usd(cost))
-            c[1].metric("Remaining", usd(left))
-            c[2].metric("Expected benefit", usd(chosen.expected_benefit_usd.sum()))
-            c[3].metric("Benefit range", f"{usd(chosen.low_estimate_usd.sum())} to {usd(chosen.high_estimate_usd.sum())}")
+            T.meter(cost, 100000, chosen.action_type_id.nunique())
+            c = st.columns(2)
+            c[0].metric("Expected benefit (30 days)", usd(chosen.expected_benefit_usd.sum()))
+            c[1].metric("Benefit range", f"{usd(chosen.low_estimate_usd.sum())} to {usd(chosen.high_estimate_usd.sum())}")
             st.caption("Benefit and range are simple sums of the teams' 30-day estimates (the range assumes every line lands low or high together).")
             st.markdown("**Evidence for each line** (open below; the page link goes deeper):")
             vv = team("p2_verdicts")
@@ -472,7 +541,7 @@ def budget_section(sel):
                           "pay": ("Pays back after", "text"), "n3": ("Net after 3 months: expected (low to high)", "text"),
                           "n6": ("Net after 6 months: expected (low to high)", "text")})
         else:
-            st.success("Keep the money: $100,000 remaining, no action slot used.")
+            T.meter(0, 100000, 0)
         source("team/p1_actions, p2_actions, p3_actions + min_q6.parquet", "teams' notebooks + src/budget.py", "30 days from 2025-07-01")
     if q6 is not None:
         with st.expander("Or build your own from the catalogue (prices only, no benefit estimate)", expanded=props is None):
@@ -491,32 +560,44 @@ def details(sel):
              "house_win_usd": ("Casino win, full period", "usd"), "luck_score": ("Luck percentile", "pct")})
     order = pd.concat([vb[vb.in_manager_bottom10].sort_values("manager_rank"), vb[~vb.in_manager_bottom10].sort_values("machine_id")])
     names = dict(zip(order.machine_id, order.machine_id + "  -  " + order.verdict + (np_where(order) )))
-    mid = st.selectbox("Machine (the GM's 10 first)", list(order.machine_id), format_func=lambda m: names[m])
+    ids = list(order.machine_id)
+    want = st.query_params.get("m")
+    mid = st.selectbox("Machine (the GM's 10 first)", ids, index=ids.index(want) if want in ids else 0, format_func=lambda m: names[m])
     r = v[v.machine_id == mid].iloc[0]
-    st.subheader(mid)
-    st.markdown(T.chip(r.verdict) + f" &nbsp; {r.confidence.lower()} confidence", unsafe_allow_html=True)
-    st.write(r.reason)
-    c = st.columns(4)
-    c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
-    c[1].metric("Expected win", usd(r.theo_usd))
-    c[2].metric("Days on floor", f"{int(r.days_on_floor)}")
-    c[3].metric("Luck percentile", f"{r.luck_score:.1%}")
-    st.markdown("**Competing explanations tested** (full period)")
     peer = r.theo_per_hour_usd / r.peer_theo_per_hour_usd if r.peer_theo_per_hour_usd else float("nan")
     avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # p2 file stores a fraction
-    st.table(pd.DataFrame([
-        ["Luck", f"{r.luck_score:.1%} of fair simulated results over its {int(r.days_on_floor)} days on the floor were this low or lower", luck_result(r.luck_score)],
-        ["Short time on floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"],
-        ["Location", f"zone earns {r.zone_index:.0%} of the floor rate for the same games", "Supported" if r.zone_index < 0.85 else "Not supported"],
-        ["Game or machine", f"earns {peer:.0%} of same-game peers per available hour", "Supported" if peer < 0.8 else "Not supported"],
-        ["Downtime", f"{avail:.1%} of scheduled time available", "Supported" if avail < 0.9 else "Not supported"],
-    ], columns=["Explanation", "Evidence", "Result"]))
+    checks = [
+        ("Luck", f"{r.luck_score:.1%} of fair replays over its {int(r.days_on_floor)} days on the floor did this badly or worse", luck_result(r.luck_score)),
+        ("Short time on the floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"),
+        ("Location", f"its zone earns {r.zone_index:.0%} of the floor rate for the same games", "Supported" if r.zone_index < 0.85 else "Not supported"),
+        ("The machine or its game", f"earns {peer:.0%} of same-game peers per available hour", "Supported" if peer < 0.8 else "Not supported"),
+        ("Downtime", f"{avail:.1%} of scheduled time available", "Supported" if avail < 0.9 else "Not supported"),
+    ]
+    rank = f"GM rank #{int(r.manager_rank)} &middot; " if r.in_manager_bottom10 else ""
+    left, right = st.columns([5, 7], gap="large")
+    with left:
+        T.html_block(f'<div class="case"><div class="sub">{rank}{html.escape(str(r.zone_name))} &middot; bank {html.escape(str(r.bank_id))} &middot; '
+                     f'{html.escape(str(r.theme))}</div><p class="id">{html.escape(mid)}</p>'
+                     f'<div style="margin-top:8px">{T.chip(r.verdict)} &nbsp;<span style="color:{T.MUTED};font-size:.85rem">{html.escape(str(r.confidence).lower())} confidence</span></div>'
+                     f'<p class="why">{html.escape(str(r.reason))}</p></div>')
+        T.takeaway("Competing explanations tested (full period)")
+        T.checklist(checks)
+        st.caption("Luck: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%. Each row shows a symbol and a word, never colour alone.")
+    with right:
+        c = st.columns(2)
+        c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
+        c[1].metric("Expected win (theo)", usd(r.theo_usd))
+        c = st.columns(2)
+        c[0].metric("Days on floor", f"{int(r.days_on_floor)}")
+        c[1].metric("Luck percentile", f"{r.luck_score:.1%}")
     sims = team("p2_luck_sims")
     if sims is not None:
         s = sims[sims.machine_id == mid]
         if len(s):
-            T.takeaway(f"Only {r.luck_score:.1%} of fair replays did as badly as {mid}'s actual result.")
-            hist = alt.Chart(s).mark_bar(color=T.SEAFOAM).encode(
+          with right:
+            T.takeaway(f"None of the 10,000 fair replays did as badly as {mid}'s actual result." if r.luck_score == 0
+                       else f"Only {r.luck_score:.1%} of fair replays did as badly as {mid}'s actual result.")
+            hist = alt.Chart(s).mark_bar(color=T.TEAL, opacity=0.55).encode(
                 x=alt.X("sim_house_win_usd:Q", bin=alt.Bin(maxbins=30), title=f"Simulated casino win over its time on the floor ({int(r.days_on_floor)} days) ($)"),
                 y=alt.Y("count()", title="Simulations (of 500)"))
             marks = pd.DataFrame({"x": [r.house_win_usd, r.theo_usd], "Line": ["Actual result", "Expected (theo)"]})
@@ -588,11 +669,14 @@ def demand(sel):
                 head = f"Weekly coin-in changed {b / a - 1:+.1%} from the first 4 to the last 4 complete weeks in this range"
             st.header(head)
             T.line(w.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), "week_start", ["Weekly coin-in ($)"], "Week starting", "Money wagered per week ($)")
-            show(w, {"week_start": ("Week starting", "date"), "coin_in_usd": ("Money wagered", "usd"), "traffic": ("Door entries counted", "int"),
-                     "coverage": ("Door counters online", "pct"), "events": ("Events that week", "text")})
+            with st.expander(f"Weekly numbers, with events ({len(w)} complete weeks)"):
+                show(w, {"week_start": ("Week starting", "date"), "coin_in_usd": ("Money wagered", "usd"), "traffic": ("Door entries counted", "int"),
+                         "coverage": ("Door counters online", "pct"), "events": ("Events that week", "text")})
             st.caption("Whole floor, all 7 zones (bank filter does not apply). Only complete Monday-Sunday weeks inside the range. "
                        "Entries are door counts, not unique visitors; a missing counter reading is offline, not zero, and is excluded (see coverage).")
-        zz = dd.groupby("zone_id").coin_in_usd.sum().sort_values()
+        vz = team("p2_verdicts")
+        zname = dict(zip(vz.zone_id, vz.zone_name)) if vz is not None else {}
+        zz = dd.assign(zone_id=dd.zone_id.map(lambda z: zname.get(z, z))).groupby("zone_id").coin_in_usd.sum().sort_values()
         T.takeaway(f"{zz.idxmax()} draws the most play: {usd(zz.max())} wagered in this selection.")
         T.bars(zz.rename("Money wagered ($)").rename_axis("zone").reset_index(), "zone", "Money wagered ($)", "Zone", "Money wagered in selection ($)", height=260)
         source("team/p3_demand.parquet", "Nikita's notebook (p3)", f"{sel['preset']}, floor-wide")
@@ -611,6 +695,8 @@ def demand(sel):
                f"Scope: {sel['preset']}, bank {sel['bank']}.")
     x = x.assign(month=pd.to_datetime(x.gaming_date).dt.strftime("%Y-%m"))
     pv = x.pivot_table(index="month", columns="manufacturer", values="lost_theo_usd", aggfunc="sum").fillna(0)
+    pv.index = [pd.Timestamp(m + "-01").strftime("%b") for m in pv.index]
+    pv.index.name = "month"
     if len(pv):
         T.bars(pv, "month", list(pv.columns), "Month", "Expected win lost to downtime ($)")
     c1, c2 = st.columns(2)
@@ -619,7 +705,7 @@ def demand(sel):
             hours=x.groupby("manufacturer").apply(lambda g: (g.scheduled_hours - g.available_hours).sum(), include_groups=False).values),
              {"manufacturer": ("Manufacturer", "text"), "hours": ("Hours down", "int"), "lost": ("Expected win lost", "usd")})
     with c2:
-        cz = x[x.cause != "none"].groupby("cause").agg(days=("gaming_date", "count"), lost=("lost_theo_usd", "sum")).reset_index()
+        cz = x[x.cause != "none"].assign(cause=lambda q: q.cause.str.replace("_", " ").str.capitalize()).groupby("cause").agg(days=("gaming_date", "count"), lost=("lost_theo_usd", "sum")).reset_index()
         show(cz, {"cause": ("Cause", "text"), "days": ("Machine-days affected", "int"), "lost": ("Expected win lost", "usd")})
     lc = team("p1_leak_clues")
     if lc is not None:
@@ -630,7 +716,7 @@ def demand(sel):
         nclues = f"{len(l)}"
         st.markdown(f"**Leak clues in this selection: {len(l)} on {l.machine_id.nunique()} machines.** These are leads to inspect, not accusations.")
         if len(l):
-            show(l.groupby("rule_failed").agg(n=("machine_id", "count"), m=("machine_id", "nunique")).reset_index(),
+            show(l.assign(rule_failed=l.rule_failed.str.replace("_", " ").str.replace("rtp", "RTP").str.capitalize()).groupby("rule_failed").agg(n=("machine_id", "count"), m=("machine_id", "nunique")).reset_index(),
                  {"rule_failed": ("Rule that flagged it", "text"), "n": ("Flags", "int"), "m": ("Machines", "int")})
     source("team/p1_downtime.parquet, team/p1_leak_clues.parquet", "Aditi's notebook (p1)", f"{sel['preset']}, bank {sel['bank']}")
     evidence(["Q3"], title="Evidence: Q3 claims on downtime")
@@ -660,7 +746,8 @@ def players(sel):
         st.header(f"Tracked players wagered {usd(x.wagered_usd.sum())}, won back {usd(x.won_back_usd.sum())}, net {usd(x.net_usd.sum())}")
         st.caption(f"{int(x.player_count.sum()):,} player-months in groups of 10+. Net = won back minus wagered (opposite sign of casino win). "
                    "Carded play only. Individual players are never shown.")
-        kp[0:3] = [("Wagered", usd(x.wagered_usd.sum())), ("Won back", usd(x.won_back_usd.sum())), ("Players' net", usd(x.net_usd.sum()))]
+        kp[0:3] = [("Wagered", T.money_short(x.wagered_usd.sum()), usd(x.wagered_usd.sum())), ("Won back", T.money_short(x.won_back_usd.sum()), usd(x.won_back_usd.sum())),
+                   ("Players' net", T.money_short(x.net_usd.sum()), usd(x.net_usd.sum()))]
         mo = x.groupby("month").agg(w=("wagered_usd", "sum"), b=("won_back_usd", "sum"), n=("net_usd", "sum"), pc=("player_count", "sum")).reset_index()
         T.bars(mo, "month", "n", "Month", "Players' net, wins minus losses ($)", color=T.NAVY)
         show(mo, {"month": ("Month", "month"), "pc": ("Player-months", "int"), "w": ("Wagered", "usd"), "b": ("Won back", "usd"), "n": ("Players' net", "usd")})
@@ -732,7 +819,7 @@ def model_plan(sel):
     st.caption(f"Train {tm['train']}, test {tm['test']} ({tm['test_days']} days), split by time; models frozen before testing; no later-published data used. "
                "Fixed dates, unaffected by the sidebar filters. The forecast file's own predictions reproduce "
                f"{usd(tm['forecast_mae_model_usd'])} (model: {tm['forecast_file_model_is'].replace('_', ' ')}) and {usd(tm['forecast_mae_baseline_usd'])} (baseline).")
-    show(mm.sort_values("mae_usd"), {"model_name": ("Model", "text"), "mae_usd": ("Average miss per day (MAE)", "usd"), "mlflow_run_id": ("MLflow run ID", "text")})
+    show(mm.sort_values("mae_usd").assign(model_name=lambda q: q.model_name.str.replace("_", " ").str.capitalize()), {"model_name": ("Model", "text"), "mae_usd": ("Average miss per day (MAE)", "usd"), "mlflow_run_id": ("MLflow run ID", "text")})
     t = fr[fr.split == "test"][["gaming_date", "actual_usd", "model_pred_usd", "baseline_pred_usd"]].rename(columns={
         "actual_usd": "Actual", "model_pred_usd": "Model forecast", "baseline_pred_usd": "Constant baseline"})
     names = ["Actual", "Model forecast", "Constant baseline"]

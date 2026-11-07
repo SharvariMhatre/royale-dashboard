@@ -12,8 +12,10 @@ from common import sidebar, header, footer  # noqa: E402
 import pages  # noqa: E402
 import theme  # noqa: E402
 
-st.set_page_config(page_title="The Gilded Ace - Decision Room", layout="wide")
+st.set_page_config(page_title="The Gilded Ace | Floor Doctor", page_icon="♠", layout="wide")
 theme.apply()
+st.logo(str(Path(__file__).resolve().parent / "assets" / "logo.svg"), size="large",
+        icon_image=str(Path(__file__).resolve().parent / "assets" / "logo_icon.svg"))
 
 PAGES = {
     "Overview": ("Decision Room", "Which 10 machines would we replace, and what do we fund with $100,000?", ["team/p2_verdicts.parquet", "min_q1.parquet"]),

@@ -62,9 +62,15 @@ a, a:visited {{ color: {TEAL_DARK}; text-decoration: underline; text-underline-o
 [data-testid="stSidebarNavLink"][aria-current="page"] {{ background: {NAVY_RAISED}; border-left: 4px solid {TEAL}; font-weight: 600; }}
 [data-testid="stSidebarNavLink"] span {{ color: {CREAM}; }}
 
+/* st.header / st.subheader inside pages: calmer, consistent sizes */
+[data-testid="stHeading"] h2, [data-testid="stHeadingWithActionElements"] h2 {{ font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: {S4}px; }}
+[data-testid="stHeading"] h3, [data-testid="stHeadingWithActionElements"] h3 {{ font-size: 1.15rem !important; font-weight: 600; }}
+[data-testid="stHeading"] a, [data-testid="stHeadingWithActionElements"] a {{ display: none; }}
+
 /* KPI cards */
 [data-testid="stMetric"] {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 8px; padding: {S3}px; box-shadow: none; }}
 [data-testid="stMetricLabel"], [data-testid="stMetricLabel"] p {{ color: {MUTED}; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }}
+[data-testid="stMetricValue"] > div {{ overflow: visible !important; text-overflow: clip !important; }}
 [data-testid="stMetricValue"] {{ color: {NAVY}; font-weight: 600; font-variant-numeric: tabular-nums; }}
 
 /* phone: KPI cards sit two per row instead of one tall stack */
@@ -89,7 +95,81 @@ a, a:visited {{ color: {TEAL_DARK}; text-decoration: underline; text-underline-o
 [data-testid="stExpander"] {{ border: 1px solid {BORDER}; border-radius: 8px; background: {SURFACE}; }}
 
 /* verdict chips */
-.chip {{ display: inline-block; padding: 2px {S2}px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid {NAVY}22; }}
+
+/* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap');
+.block-container {{ padding-top: {S3}px; }}
+[data-testid="stSidebar"] [data-testid="stLogo"] {{ height: 44px; max-width: 100%; }}
+.sb-foot {{ color: {SEAFOAM}; font-size: 0.75rem; line-height: 1.4; margin-top: {S4}px; opacity: .9; }}
+
+.ph {{ margin: {S2}px 0 {S3}px; }}
+.ph .eyebrow {{ color: {TEAL_DARK}; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: {S1}px; }}
+.ph h1 {{ font-family: 'Inter Tight', {FONT}; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; }}
+.ph .q {{ color: {MUTED}; font-size: 1.05rem; margin: {S1}px 0 {S2}px; }}
+.pills {{ display: flex; flex-wrap: wrap; gap: {S2}px; }}
+.pill {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: {NAVY}; }}
+.pill b {{ color: {TEAL_DARK}; font-weight: 600; margin-right: 4px; }}
+
+.hero {{ background: {NAVY}; color: {CREAM}; border-radius: 12px; padding: {S4}px {S4}px {S3}px; margin: 0 0 {S4}px; position: relative; overflow: hidden; }}
+.hero::after {{ content: ""; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 28px solid {TEAL}33; }}
+.hero .kicker {{ color: {SEAFOAM}; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }}
+.hero h2 {{ font-family: 'Inter Tight', {FONT}; color: {CREAM}; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: {S2}px 0 {S2}px; line-height: 1.1; }}
+.hero p {{ color: {CREAM}; font-size: 1.02rem; margin: 0 0 {S1}px; max-width: 860px; opacity: .95; }}
+.hero .tiles {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: {S3}px; margin-top: {S4}px; position: relative; z-index: 1; }}
+.hero .tile {{ border-top: 3px solid {TEAL}; padding-top: {S2}px; }}
+.hero .tile .v {{ font-family: 'Inter Tight', {FONT}; font-size: 2rem; font-weight: 800; color: {SEAFOAM}; line-height: 1.1; font-variant-numeric: tabular-nums; }}
+.hero .tile .l {{ font-size: .82rem; color: {CREAM}; opacity: .9; margin-top: 2px; }}
+@media (max-width: 760px) {{ .hero .tiles {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .hero h2 {{ font-size: 1.6rem; }} }}
+
+.sec {{ display: flex; align-items: baseline; gap: {S2}px; margin: {S4}px 0 {S2}px; }}
+.sec .n {{ font-family: 'Inter Tight', {FONT}; color: {TEAL_DARK}; font-weight: 800; font-size: .9rem; }}
+.sec h2 {{ margin: 0 !important; }}
+.sec-sub {{ color: {MUTED}; margin: 0 0 {S3}px; font-size: .95rem; }}
+
+.gm-grid {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: {S3}px; margin: {S2}px 0 {S2}px; }}
+a.gm, a.gm:visited {{ display: block; background: {SURFACE}; border: 1px solid {BORDER}; border-left: 5px solid var(--vc); border-radius: 8px;
+     padding: {S3}px; color: {NAVY}; text-decoration: none; transition: transform .12s ease, border-color .12s ease; }}
+a.gm:hover {{ transform: translateY(-2px); border-color: {TEAL}; }}
+a.gm .top {{ display: flex; justify-content: space-between; align-items: center; gap: 6px; }}
+a.gm .chip {{ font-size: .75rem; padding: 2px 8px; }}
+a.gm .rank {{ font-size: .75rem; color: {MUTED}; font-weight: 600; letter-spacing: .06em; }}
+a.gm .id {{ font-family: 'Inter Tight', {FONT}; font-size: 1.35rem; font-weight: 800; margin: {S1}px 0 2px; }}
+a.gm .zone {{ font-size: .82rem; color: {MUTED}; margin-bottom: {S2}px; }}
+a.gm .why {{ font-size: .85rem; line-height: 1.35; margin: {S2}px 0; min-height: 3.4em; }}
+a.gm .meta {{ display: flex; gap: {S3}px; font-size: .78rem; color: {MUTED}; border-top: 1px solid {BORDER}; padding-top: {S2}px; }}
+a.gm .meta b {{ color: {NAVY}; }}
+a.gm .go {{ font-size: .78rem; color: {TEAL_DARK}; font-weight: 600; margin-top: {S2}px; }}
+
+.sec-sub b {{ color: {NAVY}; }}
+@media (max-width: 1200px) {{ .gm-grid {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }} }}
+@media (max-width: 760px) {{ .gm-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+@media (max-width: 460px) {{ .gm-grid {{ grid-template-columns: 1fr; }} }}
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {{ color: {SEAFOAM} !important; }}
+.legend-row {{ display: flex; flex-wrap: wrap; gap: {S3}px; font-size: .82rem; color: {NAVY}; margin: {S1}px 0 {S2}px; }}
+
+.case {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 12px; padding: {S4}px; }}
+.case .id {{ font-family: 'Inter Tight', {FONT}; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; }}
+.case .sub {{ color: {MUTED}; margin: {S1}px 0 {S3}px; font-size: .9rem; }}
+.case .why {{ font-size: 1rem; margin: {S3}px 0 0; padding-top: {S3}px; border-top: 1px solid {BORDER}; }}
+.checks {{ list-style: none; padding: 0; margin: {S2}px 0; }}
+.checks li {{ display: grid; grid-template-columns: 30px 1fr auto; gap: {S2}px; align-items: start; padding: {S2}px 0; border-bottom: 1px solid {BORDER}; }}
+.checks li:last-child {{ border-bottom: 0; }}
+.checks .ic {{ width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; }}
+.checks .ic.yes {{ background: {TEAL_DARK}; color: {CREAM}; }}
+.checks .ic.maybe {{ background: #F5D9A0; color: {NAVY}; }}
+.checks .ic.no {{ background: #E2E8F0; color: {NAVY}; }}
+.checks .t {{ font-weight: 600; }} .checks .e {{ color: {MUTED}; font-size: .88rem; }}
+.checks .r {{ font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; }}
+
+.meter {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 12px; padding: {S3}px {S4}px; margin: {S2}px 0 {S3}px; }}
+.meter .row {{ display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: {S2}px; }}
+.meter .big {{ font-family: 'Inter Tight', {FONT}; font-size: 1.8rem; font-weight: 800; }}
+.meter .bar {{ height: 14px; background: {SEAFOAM}66; border-radius: 999px; margin: {S2}px 0; overflow: hidden; }}
+.meter .fill {{ height: 100%; background: {NAVY}; border-radius: 999px; }}
+.meter .fill.over {{ background: #B42318; }}
+.meter .lbl {{ color: {MUTED}; font-size: .85rem; }}
+
+.chip {{ white-space: nowrap; display: inline-block; padding: 2px {S2}px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid {NAVY}22; }}
 """
 
 _CHROME_HIDE = ""  # keep Streamlit's own toolbar; nothing hidden
@@ -147,6 +227,21 @@ def chip_css(v) -> str:
     return f"background-color: {bg}; color: {fg}; font-weight: 600;" if bg else ""
 
 
+def money_short(x: float) -> str:
+    """$163.8M / -$15.6M / $190.7K: KPI cards stay readable without truncation (exact value goes in the help tooltip)."""
+    a = abs(x)
+    v = f"${a / 1e6:,.1f}M" if a >= 1e6 else (f"${a / 1e3:,.1f}K" if a >= 1e4 else f"${a:,.0f}")
+    return ("-" if x < 0 else "") + v
+
+
+def _months(d: pd.DataFrame, x: str) -> pd.DataFrame:
+    """'2025-01' style categories read as 'Jan 2025' on axes (data order kept)."""
+    if x in d.columns and d[x].dtype == object and d[x].astype(str).str.fullmatch(r"\d{4}-\d{2}").all():
+        d = d.copy()
+        d[x] = pd.to_datetime(d[x] + "-01").dt.strftime("%b %Y")
+    return d
+
+
 def kpis(items: list[tuple]):
     """Row of st.metric cards: (label, value) or (label, value, help)."""
     cols = st.columns(len(items))
@@ -161,9 +256,10 @@ def _render(chart, height=300):
 
 def line(df: pd.DataFrame, x: str, ys: list[str], xtitle: str, ytitle: str, fmt: str = "$,.0f", height: int = 300):
     """Wide dataframe -> line chart. One series: navy. Several: Okabe-Ito plus a different dash per series (never colour alone)."""
-    d = df.reset_index() if x not in df.columns else df
+    d = _months(df.reset_index() if x not in df.columns else df, x)
     long = d.melt(x, value_vars=ys, var_name="Series", value_name="v")
-    enc = dict(x=alt.X(f"{x}:{'T' if pd.api.types.is_datetime64_any_dtype(d[x]) else 'N'}", title=xtitle),
+    is_t = pd.api.types.is_datetime64_any_dtype(d[x])
+    enc = dict(x=alt.X(f"{x}:{'T' if is_t else 'N'}", title=xtitle, axis=alt.Axis(format="%b %d", labelAngle=0) if is_t else alt.Axis(labelAngle=0), sort=None),
                y=alt.Y("v:Q", title=ytitle, axis=alt.Axis(format=fmt, tickCount=5)),
                tooltip=[alt.Tooltip(f"{x}", title=xtitle), alt.Tooltip("Series:N"), alt.Tooltip("v:Q", title=ytitle, format=fmt)])
     if len(ys) == 1:
@@ -179,8 +275,8 @@ def line(df: pd.DataFrame, x: str, ys: list[str], xtitle: str, ytitle: str, fmt:
 def bars(df: pd.DataFrame, x: str, y: str | list[str], xtitle: str, ytitle: str, fmt: str = "$,.0f", horizontal: bool = False,
          color: str = TEAL, height: int = 300):
     """Single series: one colour (teal by default, navy via color=). Several series (y is a list): stacked, Okabe-Ito, with legend."""
-    d = df.reset_index() if x not in df.columns else df
-    cat = alt.X(f"{x}:N", title=xtitle, sort=None) if not horizontal else alt.Y(f"{x}:N", title=xtitle, sort=None)
+    d = _months(df.reset_index() if x not in df.columns else df, x)
+    cat = alt.X(f"{x}:N", title=xtitle, sort=None, axis=alt.Axis(labelAngle=0, labelLimit=140)) if not horizontal else alt.Y(f"{x}:N", title=xtitle, sort=None)
     if isinstance(y, str):
         val = alt.Y("v:Q", title=ytitle, axis=alt.Axis(format=fmt, tickCount=5)) if not horizontal else alt.X("v:Q", title=ytitle, axis=alt.Axis(format=fmt, tickCount=5))
         long = d.assign(v=d[y])
@@ -198,3 +294,69 @@ def bars(df: pd.DataFrame, x: str, y: str | list[str], xtitle: str, ytitle: str,
 def altair(chart, height: int = 300):
     """Render a hand-built Altair chart with the shared theme."""
     _render(chart, height)
+
+
+# ---------------------------------------------------------------- redesign helpers
+BRAND = "The Gilded Ace · Floor Doctor"
+VERDICT_ORDER = ["Inspect", "Bad spot", "Short exposure", "Unlucky", "Broken", "Truly bad", "Healthy"]
+# map colours (Okabe-Ito) + shapes: colour is never alone, every verdict also has its own shape and text label
+VERDICT_COLOR = {"Inspect": "#D55E00", "Bad spot": "#E69F00", "Short exposure": "#0072B2", "Unlucky": "#56B4E9",
+                 "Broken": "#000000", "Truly bad": "#000000", "Healthy": "#009E73"}
+VERDICT_SHAPE = {"Inspect": "cross", "Bad spot": "square", "Short exposure": "triangle-up", "Unlucky": "diamond",
+                 "Broken": "triangle-down", "Truly bad": "wedge", "Healthy": "circle"}
+
+
+def html_block(s: str):
+    st.markdown(s, unsafe_allow_html=True)
+
+
+def page_header(title: str, question: str, pills: list[tuple[str, str]]):
+    p = "".join(f'<span class="pill"><b>{html.escape(k)}</b>{html.escape(v)}</span>' for k, v in pills)
+    html_block(f'<div class="ph"><div class="eyebrow">{html.escape(BRAND)}</div><h1>{html.escape(title)}</h1>'
+               f'<p class="q">{html.escape(question)}</p><div class="pills">{p}</div></div>')
+
+
+def hero(kicker: str, headline: str, lines: list[str], tiles: list[tuple[str, str]]):
+    t = "".join(f'<div class="tile"><div class="v">{html.escape(v)}</div><div class="l">{html.escape(l)}</div></div>' for v, l in tiles)
+    body = "".join(f"<p>{_inline(x)}</p>" for x in lines)
+    html_block(f'<section class="hero" aria-label="Answer in brief"><div class="kicker">{html.escape(kicker)}</div>'
+               f'<h2>{html.escape(headline)}</h2>{body}<div class="tiles">{t}</div></section>')
+
+
+def section(num: str, title: str, sub: str = ""):
+    html_block(f'<div class="sec"><span class="n">{html.escape(num)}</span><h2>{html.escape(title)}</h2></div>'
+               + (f'<p class="sec-sub">{_inline(sub)}</p>' if sub else ""))
+
+
+def gm_cards(rows: list[dict]):
+    """rows: rank, id, zone, verdict, why, luck, days. Each card links to that machine's case file."""
+    cards = []
+    for r in rows:
+        why = r["why"] if len(r["why"]) <= 110 else r["why"][:107].rsplit(" ", 1)[0] + "..."
+        cards.append(
+            f'<a class="gm" href="machine_details?m={html.escape(r["id"])}" target="_self" style="--vc:{VERDICT_COLOR.get(r["verdict"], TEAL)}" '
+            f'aria-label="GM rank {r["rank"]}, {html.escape(r["id"])}, verdict {html.escape(r["verdict"])}. Open case file.">'
+            f'<div class="top"><span class="rank">GM #{r["rank"]}</span>{chip(r["verdict"])}</div>'
+            f'<div class="id">{html.escape(r["id"])}</div><div class="zone">{html.escape(r["zone"])}</div>'
+            f'<div class="why">{html.escape(why)}</div>'
+            f'<div class="meta"><span>Luck pct <b>{r["luck"]}</b></span><span>Days <b>{r["days"]}</b></span></div>'
+            f'<div class="go">Open case file &rarr;</div></a>')
+    html_block('<div class="gm-grid">' + "".join(cards) + "</div>")
+
+
+def checklist(items: list[tuple[str, str, str]]):
+    """items: (explanation, evidence, result) with result Supported / Unlikely / Not supported. Icon + word, never colour alone."""
+    ic = {"Supported": ("yes", "&#10003;"), "Unlikely": ("maybe", "~"), "Not supported": ("no", "&#10005;")}
+    li = "".join(f'<li><span class="ic {ic.get(r, ("no", "?"))[0]}" aria-hidden="true">{ic.get(r, ("no", "?"))[1]}</span>'
+                 f'<div><div class="t">{html.escape(t)}</div><div class="e">{html.escape(e)}</div></div>'
+                 f'<span class="r">{html.escape(r)}</span></li>' for t, e, r in items)
+    html_block(f'<ul class="checks" aria-label="Competing explanations tested">{li}</ul>')
+
+
+def meter(spent: float, budget: float = 100000, types: int = 0):
+    pct = min(spent / budget, 1) * 100 if budget else 0
+    over = spent > budget
+    html_block(f'<div class="meter" role="group" aria-label="Budget used"><div class="row"><span class="big">${spent:,.0f} <span class="lbl">of ${budget:,.0f} spent</span></span>'
+               f'<span class="lbl">{"Over budget" if over else f"${budget - spent:,.0f} kept"} &middot; {types} of 3 action types used</span></div>'
+               f'<div class="bar"><div class="fill{" over" if over else ""}" style="width:{pct:.1f}%"></div></div>'
+               f'<div class="lbl">Keeping money is allowed and uses no action slot.</div></div>')

@@ -30,6 +30,7 @@ def sidebar() -> dict:
     f = _filters()
     with st.sidebar:
         st.markdown('<div class="sb-title">Filters</div>', unsafe_allow_html=True)
+        st.caption("Change the period, drill into a bank or a guest group. Every page follows these.")
         choice = st.selectbox("Period", list(PRESETS) + ["Custom range"])
         if choice == "Custom range":
             r = st.date_input("Dates", (START, END), min_value=START, max_value=END)
@@ -38,6 +39,8 @@ def sidebar() -> dict:
             lo, hi = PRESETS[choice]
         bank = st.selectbox("Bank", [ALL] + f["banks"])
         tier = st.radio("Guest group (opening tier)", [ALL] + f["tiers"])
+        st.markdown('<div class="sb-foot">Synthetic data, release ' + RELEASE + '. Analysis by the team in Databricks; '
+                    'dashboard in Streamlit. Fictional casino: findings are not facts about a real casino.</div>', unsafe_allow_html=True)
     sel = {"preset": choice, "start": lo, "end": hi, "bank": bank, "tier": tier}
     st.session_state["sel"] = sel
     return sel
@@ -85,12 +88,16 @@ def data_version(name: str = "") -> str:
     return "minimum version (built from prepared views)"
 
 
+def _d(x) -> str:
+    x = pd.Timestamp(x)
+    return f"{x:%b} {x.day}, {x.year}"
+
+
 def header(title: str, takeaway: str, sel: dict, files: list[str]):
-    st.title(title)
-    st.caption(f"**Analysis window:** {sel['start']} to {sel['end']} ({scope_label(sel)}) · bank: {sel['bank']} · "
-               f"guest group: {sel['tier']}")
-    st.caption(f"**Data version:** release {RELEASE}; {data_version(files[0] if files else '')}")
-    st.subheader(takeaway)
+    T.page_header(title, takeaway, [
+        ("Window", f"{_d(sel['start'])} to {_d(sel['end'])} ({scope_label(sel)})"),
+        ("Bank", str(sel["bank"])), ("Guest group", str(sel["tier"])),
+        ("Data", f"release {RELEASE}; {data_version(files[0] if files else '')}")])
     for f in files:
         _, why = load(f)
         if why:

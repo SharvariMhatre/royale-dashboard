@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="44" viewBox="0 0 240 44" role="img" aria-label="The Gilded Ace, Floor Doctor">
+  <rect x="2" y="4" width="28" height="36" rx="4" fill="#F1FAEE"/>
+  <rect x="2" y="4" width="28" height="36" rx="4" fill="none" stroke="#2D8B8B" stroke-width="2"/>
+  <path d="M16 12 C 11 18, 7 21, 9.5 25.5 C 11.5 28.5, 14.5 27.5, 15 26 L 13.5 31 L 18.5 31 L 17 26 C 17.5 27.5, 20.5 28.5, 22.5 25.5 C 25 21, 21 18, 16 12 Z" fill="#1A2332"/>
+  <text x="40" y="20" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="800" fill="#F1FAEE">The Gilded Ace</text>
+  <text x="40" y="36" font-family="Inter, Segoe UI, sans-serif" font-size="10.5" font-weight="700" letter-spacing="2" fill="#A8DADC">FLOOR DOCTOR</text>
+</svg>
