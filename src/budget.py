@@ -5,7 +5,6 @@ import re
 import sys
 from pathlib import Path
 
-import duckdb
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,7 +22,7 @@ KEYWORDS = [(("whole bank",), "A-MOVE-BANK"), (("relocate", "bank"), "A-MOVE-BAN
 
 def catalog() -> pd.DataFrame:
     src = CATALOG if CATALOG.exists() else CATALOG_COPY
-    c = duckdb.sql(f"SELECT * FROM '{src}'").df()
+    c = pd.read_parquet(src)
     if "unit_cost_cents" not in c.columns:  # min_q6 has dollars only: rebuild cents from per-unit cost and operating days
         c["unit_cost_cents"], c["recurring_cost_cents_per_day"] = (c.cost_per_unit_usd * 100).round(), 0
     return c.set_index("action_type_id")

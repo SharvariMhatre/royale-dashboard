@@ -1,0 +1,210 @@
+{
+ "claims": {
+  "count": 27,
+  "by_question": {
+   "Q1": 10,
+   "Q3": 5,
+   "Q5": 4,
+   "Q2": 3,
+   "Model": 2,
+   "Q4": 2,
+   "Pipeline": 1
+  }
+ },
+ "verdicts": {
+  "gm10": {
+   "Bad spot": 6,
+   "Short exposure": 3,
+   "Inspect": 1
+  },
+  "floor": {
+   "Healthy": 194,
+   "Unlucky": 59,
+   "Bad spot": 45,
+   "Short exposure": 11,
+   "Inspect": 1
+  },
+  "machines": 310,
+  "gm10_truly_bad": 0,
+  "gm10_n": 10,
+  "gm10_in_b40": 9,
+  "gm10_top_zone": "Back Forty",
+  "scope": "Full period Jan-Jun 2025 (one precomputed scope)"
+ },
+ "same_slot": [
+  {
+   "retired": "M-1120",
+   "installed": "M-5076",
+   "date": "2025-05-13",
+   "location": "L-38-5"
+  }
+ ],
+ "luck_score_check": {
+  "definition": "share of simulated six-month results at or below the machine's actual house win",
+  "max_abs_diff_vs_file_all_machines": 0.086,
+  "sims_per_machine": 500
+ },
+ "availability_units": {
+  "p2_verdicts_max": 1.0,
+  "note": "p2_verdicts availability_pct is a fraction (max 1.0); p1_downtime availability_pct is 0-100"
+ },
+ "downtime": {
+  "lost_theo_usd": 90663.27,
+  "hours_down": 5021.1,
+  "share_of_scheduled": 0.0038,
+  "lost_theo_by_cause": {
+   "fault_repair": 88621.99,
+   "install": 1569.17,
+   "move": 239.24,
+   "none": 0.0,
+   "scheduled_maintenance": 232.87
+  },
+  "scope": "Full period, active machine-days; lost_theo_usd is an upper bound (guests may play elsewhere)"
+ },
+ "leak_clues": {
+  "by_rule": {
+   "repeat_fault_within_72h": 116,
+   "outage_over_12h": 31,
+   "zero_play_while_available": 17,
+   "hold_far_from_rtp_period": 1
+  },
+  "machines": 103,
+  "total": 165,
+  "note": "leads to inspect, not accusations"
+ },
+ "zones": [
+  {
+   "zone_name": "Back Forty",
+   "machines": 48,
+   "zone_index_vs_floor": 0.653,
+   "theo_per_hour_usd": 11.69,
+   "avg_occupancy": 0.254
+  },
+  {
+   "zone_name": "Garage Entrance",
+   "machines": 36,
+   "zone_index_vs_floor": 0.948,
+   "theo_per_hour_usd": 16.9,
+   "avg_occupancy": 0.395
+  },
+  {
+   "zone_name": "High-Limit Room",
+   "machines": 25,
+   "zone_index_vs_floor": 0.994,
+   "theo_per_hour_usd": 16.64,
+   "avg_occupancy": 0.064
+  },
+  {
+   "zone_name": "Hotel Corridor",
+   "machines": 36,
+   "zone_index_vs_floor": 1.01,
+   "theo_per_hour_usd": 18.23,
+   "avg_occupancy": 0.371
+  },
+  {
+   "zone_name": "Bar Row",
+   "machines": 49,
+   "zone_index_vs_floor": 1.017,
+   "theo_per_hour_usd": 17.68,
+   "avg_occupancy": 0.401
+  },
+  {
+   "zone_name": "Center Pit",
+   "machines": 79,
+   "zone_index_vs_floor": 1.13,
+   "theo_per_hour_usd": 20.87,
+   "avg_occupancy": 0.46
+  },
+  {
+   "zone_name": "Main Entrance",
+   "machines": 37,
+   "zone_index_vs_floor": 1.191,
+   "theo_per_hour_usd": 21.32,
+   "avg_occupancy": 0.437
+  }
+ ],
+ "b40_closure": [
+  {
+   "period": "1 before closure",
+   "b40_theo_per_hour": 12.909,
+   "rest_theo_per_hour": 19.298,
+   "b40_vs_rest": 0.6689
+  },
+  {
+   "period": "2 during closure",
+   "b40_theo_per_hour": 9.1898,
+   "rest_theo_per_hour": 19.9366,
+   "b40_vs_rest": 0.461
+  },
+  {
+   "period": "3 after closure",
+   "b40_theo_per_hour": 11.8653,
+   "rest_theo_per_hour": 18.4443,
+   "b40_vs_rest": 0.6433
+  }
+ ],
+ "concentration": [
+  {
+   "top_pct": 0.1,
+   "share_of_net_loss": 0.0472
+  },
+  {
+   "top_pct": 1.0,
+   "share_of_net_loss": 0.2668
+  },
+  {
+   "top_pct": 5.0,
+   "share_of_net_loss": 0.6265
+  },
+  {
+   "top_pct": 10.0,
+   "share_of_net_loss": 0.7964
+  },
+  {
+   "top_pct": 20.0,
+   "share_of_net_loss": 0.9967
+  },
+  {
+   "top_pct": 50.0,
+   "share_of_net_loss": 1.2817
+  },
+  {
+   "top_pct": 100.0,
+   "share_of_net_loss": 1.0
+  }
+ ],
+ "model": {
+  "metrics": [
+   {
+    "model_name": "baseline_constant_mean",
+    "mae_usd": 218258.1,
+    "mlflow_run_id": "56707b90404d4a238cee358054a56941"
+   },
+   {
+    "model_name": "weekday_average",
+    "mae_usd": 68698.55,
+    "mlflow_run_id": "cce1d5d0fdfd41d2bfda4578d8955a6f"
+   },
+   {
+    "model_name": "weekday_plus_events",
+    "mae_usd": 50920.0,
+    "mlflow_run_id": "de12ff08ee6541ceb244fbc93d714f14"
+   }
+  ],
+  "forecast_mae_model_usd": 50920.0,
+  "forecast_mae_baseline_usd": 218258.1,
+  "test_days": 61,
+  "forecast_file_model_is": "weekday_plus_events",
+  "train": "2025-01-01..2025-04-30",
+  "test": "2025-05-01..2025-06-30"
+ },
+ "comps": {
+  "comp_cost_usd": 190669.3,
+  "months": 6
+ },
+ "_meta": {
+  "producer": "Sharvari (integration)",
+  "script": "src/integrate_team.py",
+  "generated_at": "2026-11-07 22:32 UTC"
+ }
+}

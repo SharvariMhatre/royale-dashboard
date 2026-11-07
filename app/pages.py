@@ -2,7 +2,7 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-from common import ALL, findings, load, machine_day, machine_totals, show, snap_months, source, usd
+from common import ALL, evidence, findings, load, machine_day, machine_totals, show, snap_months, source, team, tfind, usd
 
 BLUE, ORANGE = "#0072B2", "#E69F00"  # colourblind-safe pair
 SCRIPT = "src/minimum.py"
@@ -32,7 +32,7 @@ def _pending(*keys):
     return bool(bad)
 
 
-def overview(sel):
+def _overview_min(sel):
     if _pending("q1", "q6"):
         return
     q1, _ = load("min_q1.parquet")
@@ -82,42 +82,9 @@ def overview(sel):
     st.caption("Minimum version: simple rules (thresholds in findings/minimum.json). Richer verdicts with intervals replace "
                "these when they arrive. The zone is not yet separated from game type or position.")
 
-    st.divider()
-    st.header("$100,000 budget builder")
-    st.caption("30 days from July 1. Up to 3 action types. Cost per action = quantity x (unit cost + daily cost x "
-               "max(0, 30 - lead days)). Benefits are NOT estimated in the minimum version; keeping money is a valid answer.")
-    acts = q6[~q6.is_keep_money].set_index("action_type_id")
-    pick = st.multiselect("Action types (max 3)", list(acts.index), format_func=lambda a: acts.loc[a, "name"], max_selections=3)
-    rows = []
-    for a in pick:
-        r = acts.loc[a]
-        qty = st.number_input(f"Quantity: {r['name']} ({r['unit']}, limit {int(r.quantity_limit)})", 1, int(r.quantity_limit), 1, key=a)
-        rows.append({"Action": r["name"], "Quantity": qty, "Lead days": int(r.lead_days), "Operating days": int(r.operating_days),
-                     "Cost $": qty * r.cost_per_unit_usd, "Group": r.incompatibility_group, "Evidence on page": EVIDENCE[a]})
-    if rows:
-        df = pd.DataFrame(rows)
-        total = df["Cost $"].sum()
-        show(df.assign(c=df["Cost $"]), {"Action": ("Action", "text"), "Quantity": ("Quantity", "int"), "Lead days": ("Days to start", "int"),
-             "Operating days": ("Days running in 30", "int"), "c": ("Cost", "usd"), "Evidence on page": ("Evidence", "text")})
-        if {"A-COMP-PILOT", "A-COMP-CHANGE"} <= set(pick):
-            st.error("Incompatible: a comp pilot cannot run together with the floor-wide comp change.")
-        if sum(1 for a in pick if acts.loc[a, "incompatibility_group"] == "same_machine") > 1:
-            st.warning("Moves/replacements must target different machines (not checked here: targets are not chosen yet).")
-        left = 100000 - total
-        (st.error if left < 0 else st.success)(f"Spent ${total:,.0f}; remaining ${left:,.0f}" + (" (OVER BUDGET)" if left < 0 else ""))
-        st.markdown("**Evidence for each line:**")
-        for a in pick:
-            tgt = EVIDENCE[a]
-            if tgt in PAGE_OBJ:
-                st.page_link(PAGE_OBJ[tgt], label=f"{acts.loc[a, 'name']}: see {tgt}")
-            else:
-                st.write(f"{acts.loc[a, 'name']}: see {tgt}")
-    else:
-        st.success("Keep the money: $100,000 remaining, no action slot used.")
-    source("min_q6.parquet", SCRIPT, "catalogue prices; 30 days from 2025-07-01")
 
 
-def details(sel):
+def _details_min(sel):
     q1, _ = load("min_q1.parquet")
     md = machine_day(sel)
     if q1 is None or md is None or _pending("q1"):
@@ -156,7 +123,7 @@ def details(sel):
     source("min_q1.parquet + min_machine_day.parquet", SCRIPT, "labels: Full (Jan-Jun); chart: " + sel["preset"])
 
 
-def demand(sel):
+def _demand_min(sel):
     if _pending("q2", "q3"):
         return
     w, _ = load("min_q2.parquet")
@@ -195,7 +162,7 @@ def demand(sel):
     source("min_machine_day.parquet", SCRIPT, f"{sel['preset']}, bank: {sel['bank']}")
 
 
-def players(sel):
+def _players_min(sel):
     if _pending("q4", "q5"):
         return
     t, _ = load("min_q4.parquet")
@@ -230,7 +197,7 @@ def players(sel):
     source("min_q5.parquet", SCRIPT, f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}")
 
 
-def model_plan(sel):
+def _model_min(sel):
     if _pending("model", "q6"):
         return
     m, _ = load("min_model.parquet")
@@ -268,3 +235,466 @@ def model_plan(sel):
     st.caption("Lease example: $2,500 + 16 days x $55 = $3,380 per machine. Build a plan on the Overview page. "
                "Expected benefit, uncertainty and measurement plan arrive with the team's budget file.")
     source("min_q6.parquet", SCRIPT, "30 days from 2025-07-01")
+
+
+def _catalogue_builder(q6):
+    st.caption("30 days from July 1. Up to 3 action types. Cost per action = quantity x (unit cost + daily cost x "
+               "max(0, 30 - lead days)). Benefits are NOT estimated in the minimum version; keeping money is a valid answer.")
+    acts = q6[~q6.is_keep_money].set_index("action_type_id")
+    pick = st.multiselect("Action types (max 3)", list(acts.index), format_func=lambda a: acts.loc[a, "name"], max_selections=3)
+    rows = []
+    for a in pick:
+        r = acts.loc[a]
+        qty = st.number_input(f"Quantity: {r['name']} ({r['unit']}, limit {int(r.quantity_limit)})", 1, int(r.quantity_limit), 1, key=a)
+        rows.append({"Action": r["name"], "Quantity": qty, "Lead days": int(r.lead_days), "Operating days": int(r.operating_days),
+                     "Cost $": qty * r.cost_per_unit_usd, "Group": r.incompatibility_group, "Evidence on page": EVIDENCE[a]})
+    if rows:
+        df = pd.DataFrame(rows)
+        total = df["Cost $"].sum()
+        show(df.assign(c=df["Cost $"]), {"Action": ("Action", "text"), "Quantity": ("Quantity", "int"), "Lead days": ("Days to start", "int"),
+             "Operating days": ("Days running in 30", "int"), "c": ("Cost", "usd"), "Evidence on page": ("Evidence", "text")})
+        if {"A-COMP-PILOT", "A-COMP-CHANGE"} <= set(pick):
+            st.error("Incompatible: a comp pilot cannot run together with the floor-wide comp change.")
+        if sum(1 for a in pick if acts.loc[a, "incompatibility_group"] == "same_machine") > 1:
+            st.warning("Moves/replacements must target different machines (not checked here: targets are not chosen yet).")
+        left = 100000 - total
+        (st.error if left < 0 else st.success)(f"Spent ${total:,.0f}; remaining ${left:,.0f}" + (" (OVER BUDGET)" if left < 0 else ""))
+        st.markdown("**Evidence for each line:**")
+        for a in pick:
+            tgt = EVIDENCE[a]
+            if tgt in PAGE_OBJ:
+                st.page_link(PAGE_OBJ[tgt], label=f"{acts.loc[a, 'name']}: see {tgt}")
+            else:
+                st.write(f"{acts.loc[a, 'name']}: see {tgt}")
+    else:
+        st.success("Keep the money: $100,000 remaining, no action slot used.")
+    source("min_q6.parquet", SCRIPT, "catalogue prices; 30 days from 2025-07-01")
+
+
+
+# =====================================================================================
+# Team-file versions of the pages. Each falls back to the minimum version above when a
+# team file is missing or fails validation.
+# =====================================================================================
+TEAM_SRC = "Databricks export (app_data/team)"
+
+
+def _full_weeks(daily: pd.DataFrame, start, end) -> pd.DataFrame:
+    """Keep only complete Monday-Sunday weeks (7 distinct days) that sit fully inside [start, end]."""
+    d = daily.copy()
+    d["week_start"] = pd.to_datetime(d.gaming_date).dt.to_period("W-SUN").dt.start_time
+    n = d.groupby("week_start").gaming_date.nunique()
+    ok = n[(n == 7)].index
+    ok = [w for w in ok if w >= pd.Timestamp(start) and w + pd.Timedelta(days=6) <= pd.Timestamp(end)]
+    return d[d.week_start.isin(ok)]
+
+
+def overview(sel):
+    v, tv = team("p2_verdicts"), tfind("verdicts")
+    if v is None or tv is None:
+        st.warning("Team verdict file is pending; showing the minimum version of the Decision Room.")
+        _overview_min(sel)
+    else:
+        dn = tfind("downtime") or {}
+        zn = {z["zone_name"]: z for z in (tfind("zones") or [])}
+        top = tv["gm10_top_zone"]
+        parts = ", ".join(f"{n} {k.lower()}" for k, n in sorted(tv["gm10"].items(), key=lambda kv: -kv[1]))
+        s2 = f"{tv['gm10_in_b40']} of the {tv['gm10_n']} sit in {top}"
+        if top in zn:
+            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the typical zone per available hour"
+        if dn:
+            s2 += f", and downtime explains little ({usd(dn['lost_theo_usd'])} of expected win, {dn['share_of_scheduled']:.2%} of scheduled hours)"
+        st.info(f"**Answer in brief.** {tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}. "
+                f"{s2}, so swapping machines is unlikely to fix the list; you have $100,000 across at most 3 action types, and keeping the money is allowed.")
+        st.markdown("**The GM's list:** the 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025, with the team's verdicts. "
+                    "A low total can come from luck, location or a leak; each row tests all three.")
+        g = v[v.in_manager_bottom10].sort_values("manager_rank").copy()
+        full_scope = sel["preset"].startswith("Full") and sel["bank"] == ALL
+        live = machine_day(sel)
+        if live is not None:
+            t = machine_totals(live)[["machine_id", "house_win_usd", "availability"]].rename(
+                columns={"house_win_usd": "win_sel", "availability": "avail_sel"})
+            g = g.merge(t, on="machine_id", how="left")
+        else:
+            g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct
+        show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
+                 "days_on_floor": ("Days on floor (all 6 months)", "int"), "win_sel": ("Casino win, selected period", "usd"),
+                 "avail_sel": ("Time available, selected period", "pct"), "verdict": ("Verdict (full period)", "text"),
+                 "luck_score": ("Chance luck alone explains it", "pct"), "confidence": ("Confidence", "text"),
+                 "reason": ("Why", "text")})
+        if not full_scope:
+            st.info("Money and availability follow your filters. Verdicts, luck chances and reasons are for the full period "
+                    "(Jan-Jun, whole floor), the only scope the team precomputed; they are not recomputed for this selection.")
+        source("team/p2_verdicts.parquet + min_machine_day.parquet", "Bharath's notebook (p2) + " + SCRIPT,
+               "verdicts: Full (Jan-Jun); money columns: " + sel["preset"])
+        for p in tfind("same_slot") or []:
+            st.warning(f"**Same slot counted twice.** {p['retired']} was retired on {p['date']} and {p['installed']} was installed that day in the "
+                       f"same slot ({p['location']}). Both are in the GM's list, so one slot fills two places, and each has a short time on the floor.")
+        with st.expander("What each verdict means (plain words)"):
+            for k, w in VERDICT_WORDS.items():
+                st.markdown(f"- **{k}**: {w}")
+        st.subheader("All 310 machines, by verdict" + ("" if sel["bank"] == ALL else f" (bank {sel['bank']})"))
+        vv = v if sel["bank"] == ALL else v[v.bank_id == sel["bank"]]
+        cnt = vv.verdict.value_counts().rename_axis("Verdict").reset_index(name="Machines")
+        if len(cnt):
+            st.bar_chart(cnt.set_index("Verdict"), color=[BLUE], x_label="Verdict", y_label="Machines")
+        st.caption("Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts). 'Truly bad' and "
+                   "'Broken' appear nowhere on the floor in this data.")
+        _zone_evidence()
+    evidence(["Q1"], title="Evidence: Q1 claims behind the verdicts")
+    budget_section(sel)
+
+
+VERDICT_WORDS = {
+    "Bad spot": "Normal for its game, but its zone earns much less than other zones. The location is the problem.",
+    "Short exposure": "Few days on the floor (installed or retired during the period), so its total is low for that reason alone.",
+    "Inspect": "Its payout is far from the game's math beyond what luck explains. A lead to verify the machine, not an accusation.",
+    "Unlucky": "Normal play for its game; the win came in below expectation by chance.",
+    "Healthy": "Earning in line with its peers.",
+    "Broken": "Unavailable too much of the time.",
+    "Truly bad": "Earns well below identical games even after accounting for luck, exposure and location.",
+}
+
+
+def _zone_evidence():
+    z, b = team("p2_zone_index"), team("p2_b40_closure_effect")
+    if z is None and b is None:
+        return
+    st.subheader("Zone evidence")
+    c1, c2 = st.columns(2)
+    if z is not None:
+        c1.caption("How much each zone earns per available hour, compared with the floor (100% = floor average)")
+        c1.bar_chart(z.set_index("zone_name")[["zone_index_vs_floor"]].rename(columns={"zone_index_vs_floor": "Zone earnings vs floor"}),
+                     color=[BLUE], x_label="Zone", y_label="Earnings per available hour vs floor", horizontal=True)
+        show(z, {"zone_name": ("Zone", "text"), "machines": ("Machines", "int"), "zone_index_vs_floor": ("Earnings vs floor", "pct"),
+                 "theo_per_hour_usd": ("Expected win per hour", "usd"), "avg_occupancy": ("Seats used", "pct")})
+    if b is not None:
+        c2.caption("The Back Forty vs the rest of the floor around the walkway closure (100% = same as the rest)")
+        show(b, {"period": ("Period", "text"), "b40_theo_per_hour": ("Back Forty expected win per hour", "usd"),
+                 "rest_theo_per_hour": ("Rest of floor", "usd"), "b40_vs_rest": ("Back Forty vs rest", "pct")})
+        bb = {r["period"][2:].strip(): r["b40_vs_rest"] for r in tfind("b40_closure") or []}
+        if len(bb) == 3:
+            k = list(bb)
+            st.caption(f"Back Forty earned {bb[k[0]]:.0%} of the rest of the floor before the closure, {bb[k[1]]:.0%} during it and {bb[k[2]]:.0%} after. "
+                       "A dip while the walkway was closed points to location, not the machines.")
+    source("team/p2_zone_index.parquet, team/p2_b40_closure_effect.parquet", "Bharath's notebook (p2)", "Full period; closure split as published by the team")
+
+
+def budget_section(sel):
+    st.divider()
+    st.header("$100,000 budget builder")
+    q6, _ = load("min_q6.parquet")
+    props, cat = None, None
+    try:
+        import budget
+        cat = budget.catalog()
+        props = budget.load_proposals(cat=cat)
+        props = props[props.action_type_id.notna()].reset_index(drop=True) if len(props) else None
+    except Exception as e:  # never break the page over the builder
+        st.caption(f"Team proposals could not be loaded ({type(e).__name__}).")
+    if props is not None and len(props):
+        st.caption("Options come from the team's action files, with their own benefit ranges. Costs are recomputed with the guide formula; "
+                   "up to 3 action types and $100,000 are enforced. Ranges are the teams' estimates, not guarantees; keeping money is allowed.")
+        lab = lambda i: (f"{props.source[i][:2].upper()} | {cat.loc[props.action_type_id[i], 'name']} x{int(props.quantity[i])} | "
+                         f"cost {usd(props.cost_recomputed_usd[i])} | benefit {usd(props.expected_benefit_usd[i])} "
+                         f"({usd(props.low_estimate_usd[i])} to {usd(props.high_estimate_usd[i])})")
+        pick = st.multiselect("Pick lines to fund", list(props.index), format_func=lab)
+        if pick:
+            chosen = props.loc[pick]
+            cost = float(chosen.cost_recomputed_usd.sum())
+            for e in budget.check_plan(chosen, cat):
+                st.error(e)
+            for r in chosen.itertuples():
+                if r.issues:
+                    st.warning(f"{cat.loc[r.action_type_id, 'name']}: {r.issues}")
+            show(chosen.assign(name=chosen.action_type_id.map(cat["name"])),
+                 {"source": ("From", "text"), "name": ("Action", "text"), "quantity": ("Quantity", "int"), "targets": ("Targets", "text"),
+                  "cost_recomputed_usd": ("Cost", "usd"), "expected_benefit_usd": ("Expected benefit", "usd"),
+                  "low_estimate_usd": ("Low", "usd"), "high_estimate_usd": ("High", "usd"), "confidence": ("Confidence", "text"),
+                  "how_to_measure": ("How we would know it worked", "text")})
+            left = 100000 - cost
+            c = st.columns(4)
+            c[0].metric("Spent", usd(cost))
+            c[1].metric("Remaining", usd(left))
+            c[2].metric("Expected benefit", usd(chosen.expected_benefit_usd.sum()))
+            c[3].metric("Benefit range", f"{usd(chosen.low_estimate_usd.sum())} to {usd(chosen.high_estimate_usd.sum())}")
+            st.caption("Benefit and range are simple sums of the teams' 30-day estimates (the range assumes every line lands low or high together).")
+            st.markdown("**Evidence for each line:**")
+            for t in dict.fromkeys(chosen.action_type_id):
+                tgt = EVIDENCE.get(t, "Machine Details")
+                if tgt in PAGE_OBJ:
+                    st.page_link(PAGE_OBJ[tgt], label=f"{cat.loc[t, 'name']}: see {tgt}")
+                else:
+                    st.write(f"{cat.loc[t, 'name']}: see {tgt}")
+        else:
+            st.success("Keep the money: $100,000 remaining, no action slot used.")
+        source("team/p1_actions, p2_actions, p3_actions + min_q6.parquet", "teams' notebooks + src/budget.py", "30 days from 2025-07-01")
+    if q6 is not None:
+        with st.expander("Or build your own from the catalogue (prices only, no benefit estimate)", expanded=props is None):
+            _catalogue_builder(q6)
+
+
+def details(sel):
+    v = team("p2_verdicts")
+    if v is None:
+        st.warning("Team verdict file is pending; showing the minimum version.")
+        return _details_min(sel)
+    order = pd.concat([v[v.in_manager_bottom10].sort_values("manager_rank"), v[~v.in_manager_bottom10].sort_values("machine_id")])
+    names = dict(zip(order.machine_id, order.machine_id + "  -  " + order.verdict + (np_where(order) )))
+    mid = st.selectbox("Machine (the GM's 10 first)", list(order.machine_id), format_func=lambda m: names[m])
+    r = v[v.machine_id == mid].iloc[0]
+    st.subheader(f"{mid}: {r.verdict} ({r.confidence.lower()} confidence)")
+    st.write(r.reason)
+    c = st.columns(4)
+    c[0].metric("Casino win (all 6 months)", usd(r.house_win_usd))
+    c[1].metric("Expected win", usd(r.theo_usd))
+    c[2].metric("Days on floor", f"{int(r.days_on_floor)}")
+    c[3].metric("Chance luck alone explains it", f"{r.luck_score:.0%}")
+    st.markdown("**Competing explanations tested** (full period)")
+    peer = r.theo_per_hour_usd / r.peer_theo_per_hour_usd if r.peer_theo_per_hour_usd else float("nan")
+    avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # p2 file stores a fraction
+    st.table(pd.DataFrame([
+        ["Luck", f"{r.luck_score:.0%} of fair simulated six-month results were this low or lower", "Supported" if r.luck_score >= 0.05 else "Not supported"],
+        ["Short time on floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"],
+        ["Location", f"zone earns {r.zone_index:.0%} of the typical zone per available hour", "Supported" if r.zone_index < 0.85 else "Not supported"],
+        ["Game or machine", f"earns {peer:.0%} of same-game peers per available hour", "Supported" if peer < 0.8 else "Not supported"],
+        ["Downtime", f"{avail:.1%} of scheduled time available", "Supported" if avail < 0.9 else "Not supported"],
+    ], columns=["Explanation", "Evidence", "Result"]))
+    sims = team("p2_luck_sims")
+    if sims is not None:
+        s = sims[sims.machine_id == mid]
+        if len(s):
+            hist = alt.Chart(s).mark_bar(color="#9ecae1").encode(
+                x=alt.X("sim_house_win_usd:Q", bin=alt.Bin(maxbins=30), title="Simulated six-month casino win ($)"),
+                y=alt.Y("count()", title="Simulations (of 500)"))
+            marks = pd.DataFrame({"x": [r.house_win_usd, r.theo_usd], "Line": ["Actual result", "Expected (theo)"]})
+            rules = alt.Chart(marks).mark_rule(size=3).encode(
+                x="x:Q", color=alt.Color("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[ORANGE, "#000000"]),
+                                         legend=alt.Legend(title="Legend", orient="top")),
+                strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=["Actual result", "Expected (theo)"], range=[[1, 0], [5, 4]]), legend=None))
+            st.altair_chart(hist + rules, width="stretch")
+            st.caption("500 simulated six-month results for a normal copy of this machine. If the actual line sits far left of the bars, "
+                       "luck alone is a poor explanation.")
+    mv = team("p2_move_effects")
+    if mv is not None and (mv.machine_id == mid).any():
+        st.markdown("**This machine was moved**")
+        show(mv[mv.machine_id == mid], {"move_date": ("Moved on", "date"), "from_zone": ("From", "text"), "to_zone": ("To", "text"),
+             "days_after": ("Days observed after", "int"), "theo_per_hour_before": ("Expected win per hour before", "usd"),
+             "theo_per_hour_after": ("After", "usd"), "change_pct": ("Change", "pct"), "adjusted_change_pct": ("Change vs unmoved floor", "pct")})
+    elif mv is not None:
+        st.caption(f"Not moved. Only {len(mv)} machines moved in the period, so move evidence is thin.")
+    dt = team("p1_downtime")
+    if dt is not None:
+        m = dt[dt.machine_id == mid]
+        h = (m.scheduled_hours - m.available_hours).sum()
+        st.markdown(f"**Downtime:** {h:,.0f} hours down in 6 months ({h / m.scheduled_hours.sum():.2%} of scheduled), expected win lost at most {usd(m.lost_theo_usd.sum())}.")
+        mm = m[m.cause != "none"]
+        if len(mm):
+            show(mm.groupby("cause").agg(days=("gaming_date", "count"), lost=("lost_theo_usd", "sum")).reset_index(),
+                 {"cause": ("Cause", "text"), "days": ("Days affected", "int"), "lost": ("Expected win lost", "usd")})
+    md = machine_day(sel)
+    if md is not None:
+        mw = md[md.machine_id == mid]
+        if len(mw):
+            w = mw.assign(week=pd.to_datetime(mw.gaming_date).dt.to_period("W-SUN").dt.start_time).groupby("week")[["house_win_usd", "theo_usd"]].sum()
+            st.caption("Weekly casino win vs expected win (dollars per week), selected period")
+            st.line_chart(w.rename(columns={"house_win_usd": "Casino win ($)", "theo_usd": "Expected win ($)"}), color=[ORANGE, BLUE],
+                          x_label="Week starting", y_label="Dollars per week")
+    st.caption("Verdict, reason and luck chance are for the full period (only scope precomputed). Downtime and the chart follow the period filter where noted.")
+    source("team/p2_verdicts, p2_luck_sims, p2_move_effects, p1_downtime + min_machine_day.parquet", "Bharath/Aditi notebooks + " + SCRIPT, "Full (Jan-Jun) unless stated")
+    evidence(["Q1", "Q3"], machine=mid, title=f"Evidence mentioning {mid} first, then Q1 and Q3 claims")
+
+
+def np_where(df):
+    return pd.Series(" (GM rank " + df.manager_rank.astype("Int64").astype(str) + ")", index=df.index).where(df.in_manager_bottom10, "").values
+
+
+def demand(sel):
+    dem, dt = team("p3_demand"), team("p1_downtime")
+    if dem is None and dt is None:
+        st.warning("Team demand and downtime files are pending; showing the minimum version.")
+        return _demand_min(sel)
+    if dem is not None:
+        dd = dem[(dem.gaming_date >= pd.Timestamp(sel["start"])) & (dem.gaming_date <= pd.Timestamp(sel["end"]))]
+        day = dd.groupby("gaming_date").agg(coin_in_usd=("coin_in_usd", "sum"), traffic=("traffic_count", "sum"),
+                                            counted=("traffic_count", lambda x: x.notna().sum()), zones=("zone_id", "count")).reset_index()
+        ev = dd.dropna(subset=["event_name"]).groupby("gaming_date").event_name.agg(lambda x: "; ".join(sorted(set(x)))).reset_index()
+        wk = _full_weeks(day.merge(ev, how="left", on="gaming_date"), sel["start"], sel["end"])
+        if wk.empty:
+            st.info("No complete Monday-Sunday week fits inside this range; widen it to see the weekly trend.")
+        else:
+            w = wk.groupby("week_start").agg(coin_in_usd=("coin_in_usd", "sum"), traffic=("traffic", "sum"), counted=("counted", "sum"),
+                                             zones=("zones", "sum"), events=("event_name", lambda x: "; ".join(sorted(set("; ".join(x.dropna()).split("; ")) - {""})))).reset_index()
+            w["coverage"] = w.counted / w.zones
+            head = "Weekly coin-in"
+            if len(w) >= 8:
+                a, b = w.head(4).coin_in_usd.mean(), w.tail(4).coin_in_usd.mean()
+                head = f"Weekly coin-in changed {b / a - 1:+.1%} from the first 4 to the last 4 complete weeks in this range"
+            st.header(head)
+            st.line_chart(w.set_index("week_start")[["coin_in_usd"]].rename(columns={"coin_in_usd": "Weekly coin-in ($)"}), color=[BLUE],
+                          x_label="Week starting", y_label="Money wagered per week ($)")
+            show(w, {"week_start": ("Week starting", "date"), "coin_in_usd": ("Money wagered", "usd"), "traffic": ("Door entries counted", "int"),
+                     "coverage": ("Door counters online", "pct"), "events": ("Events that week", "text")})
+            st.caption("Whole floor, all 7 zones (bank filter does not apply). Only complete Monday-Sunday weeks inside the range. "
+                       "Entries are door counts, not unique visitors; a missing counter reading is offline, not zero, and is excluded (see coverage).")
+        zz = dd.groupby("zone_id").coin_in_usd.sum().sort_values()
+        st.bar_chart(zz.rename("Money wagered ($)"), color=[BLUE], x_label="Zone", y_label="Money wagered in selection ($)")
+        source("team/p3_demand.parquet", "Nikita's notebook (p3)", f"{sel['preset']}, floor-wide")
+        evidence(["Q2"], title="Evidence: Q2 claims on what changed in demand")
+    else:
+        st.warning("Team demand file is pending; showing the minimum demand view.")
+    st.divider()
+    if dt is None:
+        return _demand_min(sel)
+    x = dt[(dt.gaming_date >= pd.Timestamp(sel["start"])) & (dt.gaming_date <= pd.Timestamp(sel["end"]))]
+    if sel["bank"] != ALL:
+        x = x[x.bank_id == sel["bank"]]
+    hrs = (x.scheduled_hours - x.available_hours).sum()
+    st.header(f"Downtime cost at most {usd(x.lost_theo_usd.sum())} of expected win ({hrs:,.0f} hours down, {hrs / max(x.scheduled_hours.sum(), 1):.2%} of scheduled)")
+    st.caption("Upper bound: hours down x the machine's own expected win per available hour; guests may play elsewhere. "
+               f"Scope: {sel['preset']}, bank {sel['bank']}.")
+    x = x.assign(month=pd.to_datetime(x.gaming_date).dt.strftime("%Y-%m"))
+    pv = x.pivot_table(index="month", columns="manufacturer", values="lost_theo_usd", aggfunc="sum").fillna(0)
+    if len(pv):
+        st.bar_chart(pv, x_label="Month", y_label="Expected win lost to downtime ($)")
+    c1, c2 = st.columns(2)
+    with c1:
+        show(x.groupby("manufacturer").agg(h=("available_hours", "count"), lost=("lost_theo_usd", "sum")).reset_index().assign(
+            hours=x.groupby("manufacturer").apply(lambda g: (g.scheduled_hours - g.available_hours).sum(), include_groups=False).values),
+             {"manufacturer": ("Manufacturer", "text"), "hours": ("Hours down", "int"), "lost": ("Expected win lost", "usd")})
+    with c2:
+        cz = x[x.cause != "none"].groupby("cause").agg(days=("gaming_date", "count"), lost=("lost_theo_usd", "sum")).reset_index()
+        show(cz, {"cause": ("Cause", "text"), "days": ("Machine-days affected", "int"), "lost": ("Expected win lost", "usd")})
+    lc = team("p1_leak_clues")
+    if lc is not None:
+        banks = dt.drop_duplicates("machine_id").set_index("machine_id").bank_id
+        l = lc[(lc.gaming_date >= pd.Timestamp(sel["start"])) & (lc.gaming_date <= pd.Timestamp(sel["end"]))]
+        if sel["bank"] != ALL:
+            l = l[l.machine_id.map(banks) == sel["bank"]]
+        st.markdown(f"**Leak clues in this selection: {len(l)} on {l.machine_id.nunique()} machines.** These are leads to inspect, not accusations.")
+        if len(l):
+            show(l.groupby("rule_failed").agg(n=("machine_id", "count"), m=("machine_id", "nunique")).reset_index(),
+                 {"rule_failed": ("Rule that flagged it", "text"), "n": ("Flags", "int"), "m": ("Machines", "int")})
+    source("team/p1_downtime.parquet, team/p1_leak_clues.parquet", "Aditi's notebook (p1)", f"{sel['preset']}, bank {sel['bank']}")
+    evidence(["Q3"], title="Evidence: Q3 claims on downtime")
+
+
+def players(sel):
+    p = team("p3_players")
+    if p is None:
+        st.warning("Team player file is pending; showing the minimum version.")
+        return _players_min(sel)
+    ms = snap_months(sel)
+    c1, c2 = st.columns(2)
+    ages = c1.selectbox("Age band", [ALL] + sorted(p.age_band.dropna().unique()))
+    regs = c2.selectbox("Home region", [ALL] + sorted(p.home_region.dropna().unique()))
+    x = p[p.month.isin(ms)]
+    for col, val in (("tier", sel["tier"]), ("age_band", ages), ("home_region", regs)):
+        if val != ALL:
+            x = x[x[col] == val]
+    if x.empty:
+        st.info("No guest group of 10 or more players matches these filters.")
+    else:
+        st.header(f"Tracked players wagered {usd(x.wagered_usd.sum())}, won back {usd(x.won_back_usd.sum())}, net {usd(x.net_usd.sum())}")
+        st.caption(f"{int(x.player_count.sum()):,} player-months in groups of 10+. Net = won back minus wagered (opposite sign of casino win). "
+                   "Carded play only. Individual players are never shown.")
+        mo = x.groupby("month").agg(w=("wagered_usd", "sum"), b=("won_back_usd", "sum"), n=("net_usd", "sum"), pc=("player_count", "sum")).reset_index()
+        st.bar_chart(mo.set_index("month")[["n"]].rename(columns={"n": "Players' net ($)"}), color=[ORANGE], x_label="Month", y_label="Players' net, wins minus losses ($)")
+        show(mo, {"month": ("Month", "month"), "pc": ("Player-months", "int"), "w": ("Wagered", "usd"), "b": ("Won back", "usd"), "n": ("Players' net", "usd")})
+    cn = team("p3_concentration")
+    if cn is not None:
+        st.subheader("How concentrated are the losses?")
+        lz = pd.concat([pd.DataFrame({"top_pct": [0.0], "share_of_net_loss": [0.0]}), cn.sort_values("top_pct")]).assign(equal=lambda d: d.top_pct / 100)
+        long = lz.melt("top_pct", value_vars=["share_of_net_loss", "equal"], var_name="Line", value_name="share")
+        long["Line"] = long.Line.map({"share_of_net_loss": "Actual: share of all net losses", "equal": "If losses were spread evenly"})
+        names = ["Actual: share of all net losses", "If losses were spread evenly"]
+        ch = alt.Chart(long).mark_line(point=True).encode(
+            x=alt.X("top_pct:Q", title="Top share of tracked players, ranked by loss (%)"), y=alt.Y("share:Q", title="Share of total net loss", axis=alt.Axis(format="%")),
+            color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=[ORANGE, "#000000"]), legend=alt.Legend(title="Legend", orient="top")),
+            strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=names, range=[[1, 0], [5, 4]]), legend=None))
+        st.altair_chart(ch, width="stretch")
+        t10 = cn[cn.top_pct == 10].share_of_net_loss
+        if len(t10):
+            st.caption(f"The 10% of tracked players with the largest losses account for {t10.iloc[0]:.0%} of all net losses. Shares above 100% appear "
+                       "because the remaining players, as a group, won money. Full period, all tracked players (filters do not apply).")
+        source("team/p3_concentration.parquet", "Nikita's notebook (p3)", "Full period, all tracked players")
+    source("team/p3_players.parquet", "Nikita's notebook (p3)", f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}, age {ages}, region {regs}")
+    evidence(["Q4"], title="Evidence: Q4 claims on player results")
+    st.divider()
+    cp = team("p1_comps")
+    if cp is None:
+        return
+    cc = cp[cp.month.isin(ms)]
+    if sel["tier"] != ALL:
+        cc = cc[cc.tier == sel["tier"]]
+    mq5, _ = load("min_q5.parquet")
+    st.header(f"Comps cost the casino {usd(cc.comp_cost_usd.sum())} in this selection")
+    st.caption("Comp cost is cost to the house, already inside POS cost of goods: counted once. Age and region filters do not apply to comps.")
+    pv = cc.pivot_table(index="month", columns="tier", values="comp_cost_usd", aggfunc="sum")
+    if len(pv):
+        st.bar_chart(pv, x_label="Month", y_label="Comp cost to the casino ($)")
+    show(cc.groupby("month").agg(c=("comp_cost_usd", "sum"), e=("points_earned", "sum"), r=("points_redeemed", "sum")).reset_index(),
+         {"month": ("Month", "month"), "c": ("Comp cost", "usd"), "e": ("Points earned", "int"), "r": ("Points redeemed", "int")})
+    if mq5 is not None:
+        q = mq5[mq5.month.isin(ms)]
+        if sel["tier"] != ALL:
+            q = q[q.tier == sel["tier"]]
+        r = q.groupby("month")[["comp_cost_usd", "theo_usd"]].sum()
+        st.line_chart((r.comp_cost_usd / r.theo_usd).rename("Comp cost / expected win").to_frame(), color=[BLUE], x_label="Month",
+                      y_label="Comp cost / expected win")
+        st.caption("Reinvestment ratio from the minimum version's player table (comp cost / expected win); the team comps file has no expected-win column.")
+    source("team/p1_comps.parquet + min_q5.parquet", "Aditi's notebook (p1) + " + SCRIPT, f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}")
+    evidence(["Q5"], title="Evidence: Q5 claims on comps")
+
+
+def model_plan(sel):
+    fr, mm, tm = team("p3_forecast_results"), team("p3_model_metrics"), tfind("model")
+    if fr is None or mm is None or tm is None:
+        st.warning("Team forecast files are pending; showing the minimum version.")
+        return _model_min(sel)
+    best = mm.sort_values("mae_usd").iloc[0]
+    st.header(f"{best.model_name.replace('_', ' ').capitalize()} misses by {usd(best.mae_usd)} a day on May-June, against {usd(mm[mm.model_name.str.startswith('baseline')].mae_usd.iloc[0])} for the constant baseline")
+    st.caption(f"Train {tm['train']}, test {tm['test']} ({tm['test_days']} days), split by time; models frozen before testing; no later-published data used. "
+               "Fixed dates, unaffected by the sidebar filters. The forecast file's own predictions reproduce "
+               f"{usd(tm['forecast_mae_model_usd'])} (model: {tm['forecast_file_model_is'].replace('_', ' ')}) and {usd(tm['forecast_mae_baseline_usd'])} (baseline).")
+    show(mm.sort_values("mae_usd"), {"model_name": ("Model", "text"), "mae_usd": ("Average miss per day (MAE)", "usd"), "mlflow_run_id": ("MLflow run ID", "text")})
+    t = fr[fr.split == "test"][["gaming_date", "actual_usd", "model_pred_usd", "baseline_pred_usd"]].rename(columns={
+        "actual_usd": "Actual", "model_pred_usd": "Model forecast", "baseline_pred_usd": "Constant baseline"})
+    names = ["Actual", "Model forecast", "Constant baseline"]
+    long = t.melt("gaming_date", var_name="Line", value_name="Dollars")
+    chart = alt.Chart(long).mark_line().encode(
+        x=alt.X("gaming_date:T", title="Day (May-Jun 2025)"), y=alt.Y("Dollars:Q", title="Daily money wagered ($)"),
+        color=alt.Color("Line:N", scale=alt.Scale(domain=names, range=["#000000", BLUE, ORANGE]), legend=alt.Legend(title="Legend", orient="top")),
+        strokeDash=alt.StrokeDash("Line:N", scale=alt.Scale(domain=names, range=[[1, 0], [6, 3], [2, 2]]), legend=None))
+    st.altair_chart(chart, width="stretch")
+    f = findings("model")
+    if f:
+        st.caption(f"Independent check: my minimum weekday-average model gives {usd(f['mae_model_usd'])}, matching the team's weekday_average row. "
+                   f"Leak check: its weekday means use {f['leak_check']['train_rows']} Jan-Apr days; {f['leak_check']['test_rows_in_training']} May-Jun days enter training.")
+    source("team/p3_forecast_results.parquet, team/p3_model_metrics.parquet", "Nikita's notebook (p3)", "test May-Jun 2025, floor daily coin-in $")
+    evidence(["Model", "Pipeline"], title="Evidence: model and pipeline claims")
+    q6, _ = load("min_q6.parquet")
+    if q6 is not None:
+        st.divider()
+        st.subheader("Action catalogue with budget cost (guide formula)")
+        show(q6, {"name": ("Action", "text"), "unit": ("Priced per", "text"), "quantity_limit": ("Most allowed", "int"),
+                  "lead_days": ("Days to start", "int"), "operating_days": ("Days running in 30", "int"),
+                  "cost_per_unit_usd": ("Cost per unit", "usd"), "max_cost_usd": ("Cost at the limit", "usd"),
+                  "incompatibility_group": ("Cannot combine with others in group", "text")})
+        st.caption("Lease example: $2,500 + 16 days x $55 = $3,380 per machine. Build a plan on the Overview page. Estimates come from the teams' action files.")
+        source("min_q6.parquet", SCRIPT, "30 days from 2025-07-01")
+
+
+def evidence_page(sel):
+    c = team("all_claims")
+    if c is None:
+        st.warning("Pending: the merged claims table is not available yet.")
+        return
+    qs = st.multiselect("Question", sorted(c.question.unique()), default=sorted(c.question.unique()))
+    src = st.multiselect("From", sorted(c.source.unique()), default=sorted(c.source.unique()))
+    x = c[c.question.isin(qs) & c.source.isin(src)]
+    st.subheader(f"{len(x)} claims. Each lists the alternative explanation that was tested and its limitation.")
+    show(x, {"claim_id": ("ID", "text"), "question": ("Question", "text"), "claim": ("Claim", "text"), "result": ("Result", "text"),
+             "alternative_tested": ("Alternative explanation tested", "text"), "limitation": ("Limitation", "text"),
+             "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")})
+    source("team/all_claims.parquet", "src/integrate_team.py (merge of p1/p2/p3_claims)", "all questions")

@@ -1,6 +1,6 @@
 """Shared helpers: period/bank/guest filters, safe file loader, standard page header."""
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 import pandas as pd
 import streamlit as st
@@ -73,6 +73,8 @@ def load(name: str):
 
 def data_version(name: str = "") -> str:
     meta = _meta_path(APP_DATA / name) if name else None
+    if not meta and name and (APP_DATA / name).exists() and name.startswith("team/"):
+        return f"exported from Databricks (workspace.casino), file dated {datetime.fromtimestamp((APP_DATA / name).stat().st_mtime):%b} "                f"{datetime.fromtimestamp((APP_DATA / name).stat().st_mtime).day}"
     if meta:
         try:
             m = json.loads(meta.read_text())
@@ -91,7 +93,7 @@ def header(title: str, takeaway: str, sel: dict, files: list[str]):
     for f in files:
         _, why = load(f)
         if why:
-            st.info(f"Pending: {why}.")
+            st.info(f"Pending: {why}. Showing the minimum version where one exists.")
 
 
 # ---------- findings + live recompute helpers ----------
@@ -170,3 +172,42 @@ def show(df: pd.DataFrame, spec: dict):
     """Display a table for a manager: spec = {column: (plain-English name, kind)}; kinds: usd pct pct1 int num yesno date text."""
     out = pd.DataFrame({lab: _fmt(df[c], k) for c, (lab, k) in spec.items() if c in df.columns})
     st.dataframe(out, hide_index=True, width="stretch")
+
+
+# ---------- team files, team findings, evidence ----------
+def team(name: str):
+    """Validated team table or None (a failed/missing file is 'pending': callers fall back to the minimum version)."""
+    d = load(f"team/{name}.parquet")[0]
+    if d is None:
+        return None
+    d = d.copy()
+    for c in d.columns:  # Databricks DECIMAL arrives as Decimal objects; dates as python dates: normalise for pandas/altair
+        if d[c].dtype == object and d[c].notna().any():
+            x = d[c].dropna().iloc[0]
+            if type(x).__name__ == "Decimal":
+                d[c] = d[c].astype(float)
+            elif type(x).__name__ == "date":
+                d[c] = pd.to_datetime(d[c])
+    return d
+
+
+def tfind(key: str):
+    try:
+        return json.loads((APP_DATA / "findings" / "team.json").read_text())[key]
+    except Exception:
+        return None
+
+
+def evidence(questions: list[str], machine: str | None = None, title: str = "Evidence: claims behind this page"):
+    """Expander listing the team's claims for these questions (alternative tested + limitation shown). Machine claims first."""
+    c = team("all_claims")
+    if c is None:
+        return
+    c = c[c.question.isin(questions)].copy()
+    if machine:
+        hit = c.apply(lambda r: machine in f"{r.claim} {r.result}", axis=1)
+        c = pd.concat([c[hit], c[~hit]])
+    with st.expander(f"{title} ({len(c)})"):
+        show(c, {"claim_id": ("ID", "text"), "claim": ("Claim", "text"), "result": ("Result", "text"),
+                 "alternative_tested": ("Alternative explanation tested", "text"), "limitation": ("Limitation", "text"),
+                 "confidence": ("Confidence", "text"), "evidence_table": ("Evidence table", "text"), "source": ("From", "text")})
