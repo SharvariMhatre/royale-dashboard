@@ -4,3 +4,4 @@
 - 2026-11-07 Claude wrote Q2-Q6/model in src/minimum.py, app/pages.py; revised Q1 labels per Sharvari's spec.
 - 2026-11-07 Claude wrote validate_contracts.py + tests, clickable evidence links.
 - 2026-11-07 Claude: updated contract to team p1/p2/p3 files, wrote budget.py, display fixes, answer box.
+- 2026-11-07 Claude: wrote export_from_databricks.py (credentials from .env, never printed), new contract, budget.py update.

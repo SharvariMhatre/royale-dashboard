@@ -8,24 +8,34 @@ from pathlib import Path
 import pandas as pd
 
 META_FIELDS = ["schema_version", "data_release", "generated_at", "producer"]
-VERDICTS = {"Unlucky", "Bad spot", "Broken", "Inspect", "Truly bad", "Mixed / not enough evidence"}
-ACTION_COLS = ["action_type_id", "name", "quantity", "targets", "lead_days", "operating_days", "cost_usd", "estimate_lo_usd",
-               "estimate_hi_usd", "assumption", "metric", "measurement_method", "evidence_ref"]
-CLAIM_COLS = ["claim_id", "claim", "question", "table_or_query", "result", "alternative_explanation", "limitation", "source_script"]
+VERDICTS = {"Inspect", "Short exposure", "Broken", "Truly bad", "Bad spot", "Unlucky", "Healthy"}
+CLAIM_COLS = ["claim_id", "question", "claim", "evidence_table", "result", "alternative_tested", "limitation", "confidence"]
+ACTION_COLS = ["action", "quantity", "targets", "cost_usd", "expected_benefit_usd", "low_estimate_usd", "high_estimate_usd",
+               "confidence", "how_to_measure"]
 
-# stem -> (required columns, unique key or None). Only the columns we were given are required; the rest are
-# recorded from the 20-row samples in app_data/team/samples/ when they arrive.
+# stem -> (required columns, unique key or None). Extra columns are fine; a missing required column fails.
 REQ = {
-    "p1_machine_day_clean": (["machine_id", "gaming_date"], ["machine_id", "gaming_date"]),
-    "p1_downtime": ([], None), "p1_comps": ([], None),
-    "p1_leak_clues": (["machine_id", "gaming_date", "reason"], None),
-    "p2_verdicts": (["machine_id", "zone_id", "config_id", "verdict", "verdict_reason", "dollar_impact_usd", "luck_score",
-                     "peer_index", "peer_index_lo", "peer_index_hi", "availability", "moved_flag"], ["machine_id"]),
-    "p2_luck_sims": ([], None), "p2_move_effects": ([], None),
-    "p3_forecast_results": (["gaming_date", "actual_usd", "pred_model_usd", "pred_baseline_usd", "split"], ["gaming_date"]),
-    "p3_model_metrics": ([], None), "p3_demand": ([], None), "p3_players": ([], None), "p3_concentration": ([], None),
+    "p1_downtime": (["machine_id", "gaming_date", "bank_id", "zone_id", "manufacturer", "available_hours", "scheduled_hours",
+                     "availability_pct", "lost_theo_usd", "cause"], None),
+    "p1_comps": (["month", "comp_cost_usd", "points_earned", "points_redeemed", "tier"], None),
+    "p1_leak_clues": (["machine_id", "gaming_date", "rule_failed", "details"], None),
+    "p2_verdicts": (["machine_id", "bank_id", "zone_id", "x", "y", "house_win_usd", "theo_usd", "theo_per_hour_usd",
+                     "availability_pct", "luck_score", "verdict", "reason", "dollar_impact_usd", "confidence",
+                     "in_manager_bottom10"], ["machine_id"]),
+    "p2_luck_sims": (["machine_id", "sim_house_win_usd"], None),
+    "p2_move_effects": (["machine_id", "from_location", "to_location", "theo_per_hour_before", "theo_per_hour_after",
+                         "change_pct"], None),
+    "p3_demand": (["gaming_date", "zone_id", "coin_in_usd", "traffic_count", "event_name"], None),
+    "p3_forecast_results": (["gaming_date", "actual_usd", "baseline_pred_usd", "model_pred_usd", "split"], ["gaming_date"]),
+    "p3_model_metrics": (["model_name", "mae_usd", "mlflow_run_id"], None),
+    "p3_players": (["month", "tier", "age_band", "home_region", "wagered_usd", "won_back_usd", "net_usd", "player_count"], None),
+    "p3_concentration": (["top_pct", "share_of_net_loss"], None),
+    "final_budget_plan": (ACTION_COLS, None),
+    # optional extras from Bharath: non-empty is the only check
+    "p2_zone_index": ([], None), "p2_b40_closure_effect": ([], None), "p2_inspection_candidates": ([], None),
+    "p2_luck_scores": ([], None), "p2_manager_bottom10": ([], None),
 }
-for _p in ("p1", "p2", "p3"):
+for _p in ("p1", "p2", "p3", "all"):
     REQ[f"{_p}_actions"] = (ACTION_COLS, None)
     REQ[f"{_p}_claims"] = (CLAIM_COLS, ["claim_id"])
 CONTRACT_STEMS = set(REQ)
@@ -50,7 +60,7 @@ def check(path) -> tuple[list[str], list[str]]:
             df = pd.read_csv(p)
         except Exception as e:
             return [f"{p.name}: unreadable ({e})"], warns
-        return [f"{p.name}: missing column '{c}'" for c in CLAIM_COLS + ["scope"] if c not in df.columns], warns
+        return [f"{p.name}: missing column '{c}'" for c in CLAIM_COLS + ["source_script"] if c not in df.columns], warns
     if p.stem not in REQ:
         return [f"{p.name}: not a contract file (known: {', '.join(sorted(REQ))})"], warns
     try:
@@ -73,9 +83,6 @@ def check(path) -> tuple[list[str], list[str]]:
         bad = sorted(set(df.verdict.dropna()) - VERDICTS)
         if bad or df.verdict.isna().any():
             errs.append(f"{p.name}: verdicts must be one of {sorted(VERDICTS)}; got {bad or 'empty values'}")
-        w = df.dropna(subset=["peer_index", "peer_index_lo", "peer_index_hi"])
-        if ((w.peer_index_lo > w.peer_index) | (w.peer_index > w.peer_index_hi)).any():
-            errs.append(f"{p.name}: peer_index must lie within [peer_index_lo, peer_index_hi]")
     if p.stem == "p3_forecast_results" and not errs:
         if not set(df.split) <= {"train", "test"}:
             errs.append(f"{p.name}: split must be 'train' or 'test'")
@@ -83,18 +90,19 @@ def check(path) -> tuple[list[str], list[str]]:
             d = pd.to_datetime(df.gaming_date)
             if d[df.split == "train"].max() >= d[df.split == "test"].min():
                 errs.append(f"{p.name}: train dates overlap test dates (must split by time)")
-    if p.stem in ("p3_players", "p3_concentration"):
+    if p.stem == "p3_players" and not errs:
         if any("player_id" in c for c in df.columns):
             errs.append(f"{p.name}: individual player IDs are not allowed")
-        if "players" in df.columns and (df.players < 10).any():
+        if (df.player_count < 10).any():
             errs.append(f"{p.name}: group smaller than 10 players")
-    if p.stem.endswith("_actions") and not errs:
-        if (df.cost_usd < 0).any():
-            errs.append(f"{p.name}: negative cost_usd")
-        if (df.quantity <= 0).any():
-            errs.append(f"{p.name}: quantity must be positive")
-        if (df.estimate_lo_usd > df.estimate_hi_usd).any():
-            errs.append(f"{p.name}: estimate_lo_usd must be <= estimate_hi_usd")
+    if p.stem in ("final_budget_plan",) or p.stem.endswith("_actions"):
+        if not errs:
+            if (df.cost_usd < 0).any():
+                errs.append(f"{p.name}: negative cost_usd")
+            if (df.quantity <= 0).any():
+                errs.append(f"{p.name}: quantity must be positive")
+            if (df.low_estimate_usd > df.high_estimate_usd).any():
+                errs.append(f"{p.name}: low_estimate_usd must be <= high_estimate_usd")
     mp = meta_path(p)
     if mp is None:
         warns.append(f"{p.name}: no _meta sidecar (version unknown)")
@@ -112,7 +120,7 @@ def validate(path) -> list[str]:
 
 
 def main(argv):
-    names = [Path(a) for a in argv] or sorted(TEAM_DIR.glob("p[123]_*.parquet"))
+    names = [Path(a) for a in argv] or sorted(f for f in TEAM_DIR.glob("*.parquet") if f.stem in REQ)
     if not names:
         print("No team files in app_data/team/ yet.")
         return 0
