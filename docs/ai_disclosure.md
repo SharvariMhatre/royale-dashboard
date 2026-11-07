@@ -3,7 +3,8 @@
 Dashboard Royale entry, The Gilded Ace. AI use is allowed by the rules; this lists what was used, for what, and what people decided.
 
 ## Tools
-- **Claude Code** (model: Claude Sonnet 5.5) ran in the dashboard owner's terminal, inside the project folder, from Nov 7, 2026. A running log is in `notes/ai_log.md` and the task history in `PROGRESS_sharvari.md`.
+- **Claude Code** (Claude Sonnet 5.5, and Claude Opus 5.5 at times) ran in the dashboard owner's terminal, inside the project folder, from Nov 7, 2026. A running log is in `notes/ai_log.md` and the task history in `PROGRESS_sharvari.md`.
+- **Claude on claude.ai** was used for planning, for reviewing outputs against the challenge guide, and for drafting team messages.
 - **Databricks AI features** used by the three analysts: [TEAMMATES TO FILL IN: for example Databricks Assistant, Genie, MLflow. Name the feature, the notebook and what it produced. Not recorded in this repo.]
 
 ## What Claude Code did

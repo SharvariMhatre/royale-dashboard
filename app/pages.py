@@ -312,7 +312,7 @@ def overview(sel):
         parts = ", ".join(f"{n} {k.lower()}" for k, n in sorted(tv["gm10"].items(), key=lambda kv: -kv[1]))
         s2 = f"{tv['gm10_in_b40']} sit in {top}"
         if top in zn:
-            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the typical zone"
+            s2 += f", which earns {zn[top]['zone_index_vs_floor']:.0%} of the floor rate for the same games"
         if dn:
             s2 += f"; downtime explains little ({dn['share_of_scheduled']:.2%} of hours)"
         st.info("**Answer in brief.**\n\n" + f"{tv['gm10_truly_bad']} of the GM's {tv['gm10_n']} are truly bad: {parts}.\n\n" + f"{s2}.")
@@ -381,7 +381,7 @@ def _zone_evidence():
     st.subheader("Zone evidence")
     c1, c2 = st.columns(2)
     if z is not None:
-        c1.caption("How much each zone earns per available hour, compared with the floor (100% = floor average)")
+        c1.caption("How much each zone earns per available hour for the same games, compared with the floor rate (100% = floor rate)")
         c1.bar_chart(z.set_index("zone_name")[["zone_index_vs_floor"]].rename(columns={"zone_index_vs_floor": "Zone earnings vs floor"}),
                      color=[BLUE], x_label="Zone", y_label="Earnings per available hour vs floor", horizontal=True)
         show(z, {"zone_name": ("Zone", "text"), "machines": ("Machines", "int"), "zone_index_vs_floor": ("Earnings vs floor", "pct"),
@@ -498,7 +498,7 @@ def details(sel):
     st.table(pd.DataFrame([
         ["Luck", f"{r.luck_score:.1%} of fair simulated results over its {int(r.days_on_floor)} days on the floor were this low or lower", luck_result(r.luck_score)],
         ["Short time on floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"],
-        ["Location", f"zone earns {r.zone_index:.0%} of the typical zone per available hour", "Supported" if r.zone_index < 0.85 else "Not supported"],
+        ["Location", f"zone earns {r.zone_index:.0%} of the floor rate for the same games", "Supported" if r.zone_index < 0.85 else "Not supported"],
         ["Game or machine", f"earns {peer:.0%} of same-game peers per available hour", "Supported" if peer < 0.8 else "Not supported"],
         ["Downtime", f"{avail:.1%} of scheduled time available", "Supported" if avail < 0.9 else "Not supported"],
     ], columns=["Explanation", "Evidence", "Result"]))

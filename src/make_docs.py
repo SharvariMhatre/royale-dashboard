@@ -32,31 +32,42 @@ lt = T["luck_tests_gm10"]
 gp = T["gm_plan"]
 
 # ---------------------------------------------------------------- write-up (max 400 words)
+MIN = json.loads((ROOT / "app_data" / "findings" / "minimum.json").read_text())
+musd = lambda x: f"${abs(x) / 1e6:.1f}M"
+kusd = lambda x: f"${abs(x) / 1e3:.1f}k"
+D, PL, Q4, Q5 = T["demand"], T["players"], MIN["q4"], MIN["q5"]
+r5 = Q5["ratio_by_month"]
+wf = list(T["weekday_forecast"].items())          # busiest first
+assert mv["adjusted_change_pct"] > 1.0            # "more than doubled" must be true
+ZONE = "the floor rate for the same games"        # zone_index compares a zone with the floor for the SAME games
+
 W = f"""# The Gilded Ace: should we replace the 10 lowest machines?
 
 ## Problem
-The GM wants to replace the 10 lowest-earning machines (Jan 1 to Jun 30, 2025). Low earnings can come from luck, location or a leak. We tested all three before choosing.
+The GM wants to replace the 10 lowest-earning machines (Jan 1 to Jun 30, 2025). Low earnings can come from luck, location or a leak. We tested all three.
 
-## What we found
+## Q1: which machines are truly underperforming?
 - {V['gm10_truly_bad']} of the GM's {V['gm10_n']} are truly bad: {parts}.
-- {V['gm10_in_b40']} of the 10 sit in {top}, which earns {pct(zones[top]['zone_index_vs_floor'])} of the typical zone per available hour. During the walkway closure it earned {pct(during)} of the rest of the floor, against {pct(before)} before and {pct(after)} after.
-- {slot['retired']} was retired and {slot['installed']} was installed on {slot['date']} in the same slot ({slot['location']}). One slot fills two places on the list, and both had short times on the floor.
-- {insp['machine_id']} is an inspect lead: hold {hold.group(1)}% against {hold.group(2)}% expected, and no fair replay did as badly. This is a lead to check, not an accusation.
+- {V['gm10_in_b40']} sit in {top}, which earns {pct(zones[top]['zone_index_vs_floor'])} of {ZONE}. During the walkway closure it earned {pct(during)} of the rest of the floor, against {pct(before)} before and {pct(after)} after.
+- The casino already replaced one machine in slot {slot['location']} on {slot['date']}, and the replacement landed on the list too: replacing doesn't fix a bad spot.
+- {mv['machine_id']} more than doubled its earnings per available hour after moving from {mv['from_zone']} to {mv['to_zone']} (+{pct(mv['adjusted_change_pct'])} vs unmoved machines). Only {len(T['moves'])} machines moved.
+- {insp['machine_id']} is an inspect lead (hold {hold.group(1)}% against {hold.group(2)}% expected), a lead to check, not an accusation.
+- Tests: 10,000 fair replays per machine for luck (a supported explanation for {lt['Supported']} of the 10, unlikely for {lt['Unlikely']}, not supported for {lt['Not supported']}), and each machine against the same game elsewhere.
 
-## How we tested it
-- Luck: 10,000 fair replays per machine in Databricks. Luck is a supported explanation for {lt['Supported']} of the 10, unlikely for {lt['Unlikely']} and not supported for {lt['Not supported']}. Across the floor {T['luck_floor']['below_1pct']} machines fall below 1%, against about {T['luck_floor']['expected_by_chance']} expected by chance.
-- Peers: each machine against the same game elsewhere on the floor.
-- Moves: {len(T['moves'])} machines moved. {mv['machine_id']} went from {mv['from_zone']} to {mv['to_zone']} and earned {pct(mv['adjusted_change_pct'])} more per available hour than the unmoved floor. {len(T['moves'])} moves is thin evidence.
-- Downtime: {pct(DN['share_of_scheduled'], 2)} of scheduled hours, at most {usd(DN['lost_theo_usd'])} of expected win. It does not explain the list.
+## Q2 to Q5
+- **Demand:** coin-in changed {D['change_pct']:+.1f}% from the first to the last 4 full weeks.
+- **Downtime:** {pct(DN['share_of_scheduled'], 2)} of scheduled hours, at most {usd(DN['lost_theo_usd'])} of expected win. It does not explain the list.
+- **Players:** tracked players lost {musd(PL['net_usd'])} against {musd(Q4['theo_usd'])} expected. The top 10% hold {pct(Q4['top10pct_share_of_theo'])} of expected losses.
+- **Comps:** {kusd(Q5['comp_cost_usd'])}, rising from {pct(r5['2025-01'], 2)} to {pct(r5['2025-06'], 2)} of theo, Jan to Jun.
 
 ## Model
-A weekday plus events forecast of daily coin-in misses by {usd(best['mae_usd'])} on May and June, against {usd(base['mae_usd'])} for a constant baseline. Trained on {T['model']['train']}, tested on {T['model']['test']}, split by time and frozen before testing.
+Weekday plus events misses daily coin-in by {usd(best['mae_usd'])} on May and June, against {usd(base['mae_usd'])} for a constant baseline (train Jan to Apr, test May to Jun). It changes where staffing goes: {wf[0][0]} ({musd(wf[0][1])}) and {wf[1][0]} ({musd(wf[1][1])}) are forecast busiest, so an extra technician shift goes there, and the forecast is the baseline for measuring a promotion weekend's lift.
 
-## $100,000 plan
-PENDING: team decision at 6 PM. For comparison, the GM's own plan (replace 10 machines) costs {usd(gp['cost_usd'])} and the team estimates {usd(gp['expected_benefit_usd'])} benefit.
+## Q6: $100,000 plan
+PENDING: team decision at 6 PM. For comparison, the GM's own plan (replace 10 machines) costs {usd(gp['cost_usd'])} with an estimated {usd(gp['expected_benefit_usd'])} benefit.
 
 ## How we would measure it
-Each funded action gets one metric, a baseline or control, and a 30-day check. Example: for an inspected machine, compare July hold with its confidence interval. Final measures follow the plan decision.
+Each funded action gets one metric, a baseline or control, and a 30-day check. Final measures follow the plan decision.
 """
 n = len(re.sub(r"[#*\-]+", " ", W).split())
 assert n <= 400, f"write-up has {n} words"
@@ -103,10 +114,10 @@ peer = re.search(r"\((\d+)% of peers\)", r1181["reason"]).group(1)
 J = f"""# Likely judge questions
 
 **1. Why is M-1181 Bad spot when luck is Not supported?**
-These are two different questions. Bad spot answers why its total is low: it earns {peer}% of same-game peers, which is normal for its game, but its zone earns {pct(zones[top]['zone_index_vs_floor'])} of the floor, so its expected win is low. Luck percentile asks whether it also fell short of that low expectation: only {pct(r1181['luck_score'], 1)} of fair replays did worse, so luck alone does not explain the extra shortfall. Both can be true. We keep the verdict Bad spot because the zone is the main driver, and it is not flagged Inspect because the inspect rule fired only on {insp['machine_id']}. With 310 machines, {T['luck_floor']['below_1pct']} fall below 1% where about {T['luck_floor']['expected_by_chance']} would by chance, so one machine at {pct(r1181['luck_score'], 1)} is not enough to call a fault.
+These are two different questions. Bad spot answers why its total is low: it earns {peer}% of same-game peers, which is normal for its game, but its zone earns {pct(zones[top]['zone_index_vs_floor'])} of {ZONE}, so its expected win is low. Luck percentile asks whether it also fell short of that low expectation: only {pct(r1181['luck_score'], 1)} of fair replays did worse, so luck alone does not explain the extra shortfall. Both can be true. The Inspect rule needs |z| > 3.29 (under 0.1% by chance). M-1181's z is {r1181['luck_z']:.2f}, well inside that, so it is not an inspect lead, while {insp['machine_id']} sits at {insp['luck_z']:.2f}. The zone stays the main driver, so the verdict is Bad spot. With 310 machines, {T['luck_floor']['below_1pct']} fall below 1% where about {T['luck_floor']['expected_by_chance']} would by chance, so one machine at {pct(r1181['luck_score'], 1)} is not enough to call a fault.
 
 **2. How do you know it is the location and not the machines?**
-Four checks point the same way. The zone earns {pct(zones[top]['zone_index_vs_floor'])} of the typical zone per available hour. The same games elsewhere earn more. {top} dipped to {pct(during)} of the rest of the floor while its walkway was closed ({pct(before)} before, {pct(after)} after). And {mv['machine_id']} earned {pct(mv['adjusted_change_pct'])} more after moving to {mv['to_zone']}. The limit: only {len(T['moves'])} machines moved, so the move evidence is thin and we say so.
+Four checks point the same way. The zone earns {pct(zones[top]['zone_index_vs_floor'])} of {ZONE} (the zone index compares each game with the same game across the floor). The same games elsewhere earn more. {top} dipped to {pct(during)} of the rest of the floor while its walkway was closed ({pct(before)} before, {pct(after)} after). And {mv['machine_id']} more than doubled its earnings per available hour after moving to {mv['to_zone']} (+{pct(mv['adjusted_change_pct'])} vs unmoved machines). The limit: only {len(T['moves'])} machines moved, so the move evidence is thin and we say so.
 
 **3. How was the model validated?**
 Train {T['model']['train']}, test {T['model']['test']} ({T['model']['test_days']} days), split by time, frozen before testing. {best['model_name'].replace('_', ' ').capitalize()} misses by {usd(best['mae_usd'])} a day against {usd(base['mae_usd'])} for a constant baseline. MLflow run IDs are on the Model page. We reproduced the weekday average result independently. No later-published data was used.

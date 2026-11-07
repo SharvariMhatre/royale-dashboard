@@ -7,3 +7,4 @@
 - 2026-11-07 Claude: wrote export_from_databricks.py (credentials from .env, never printed), new contract, budget.py update.
 - 2026-11-07 Claude: wired pages to team files, integrate_team.py, evidence page, team budget builder.
 - 2026-11-07 Claude: drafted docs (writeup.md 370 words, evidence.md, ai_disclosure.md, judge_qa.md) via src/make_docs.py from team.json; extended integrate_team.py findings (inspect, moves, luck tests, gm plan).
+- 2026-11-07 Claude: revised docs per Sharvari (all six questions, same-game zone wording, model decision, Inspect rule |z|>3.29); ai_disclosure tools updated.

@@ -50,7 +50,8 @@
    "luck_score": 0.0333,
    "house_win_usd": 3573.25,
    "theo_usd": 7478.7,
-   "days_on_floor": 49
+   "days_on_floor": 49,
+   "luck_z": -1.8533
   },
   {
    "manager_rank": 2.0,
@@ -62,7 +63,8 @@
    "luck_score": 0.0,
    "house_win_usd": 15796.25,
    "theo_usd": 51961.0,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -4.5701
   },
   {
    "manager_rank": 3.0,
@@ -74,7 +76,8 @@
    "luck_score": 0.2192,
    "house_win_usd": 16355.0,
    "theo_usd": 18910.925,
-   "days_on_floor": 132
+   "days_on_floor": 132,
+   "luck_z": -0.788
   },
   {
    "manager_rank": 4.0,
@@ -86,7 +89,8 @@
    "luck_score": 0.2597,
    "house_win_usd": 20050.0,
    "theo_usd": 25329.0,
-   "days_on_floor": 55
+   "days_on_floor": 55,
+   "luck_z": -0.6488
   },
   {
    "manager_rank": 5.0,
@@ -98,7 +102,8 @@
    "luck_score": 0.0376,
    "house_win_usd": 24932.75,
    "theo_usd": 33139.3125,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -1.8154
   },
   {
    "manager_rank": 6.0,
@@ -110,7 +115,8 @@
    "luck_score": 0.0085,
    "house_win_usd": 26977.0,
    "theo_usd": 32516.16,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -2.4059
   },
   {
    "manager_rank": 7.0,
@@ -122,7 +128,8 @@
    "luck_score": 0.4408,
    "house_win_usd": 30303.5,
    "theo_usd": 30894.6,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -0.1362
   },
   {
    "manager_rank": 8.0,
@@ -134,7 +141,8 @@
    "luck_score": 0.0745,
    "house_win_usd": 30393.75,
    "theo_usd": 33784.7,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -1.455
   },
   {
    "manager_rank": 9.0,
@@ -146,7 +154,8 @@
    "luck_score": 0.7186,
    "house_win_usd": 31939.5,
    "theo_usd": 29525.6375,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": 0.5782
   },
   {
    "manager_rank": 10.0,
@@ -158,7 +167,8 @@
    "luck_score": 0.4747,
    "house_win_usd": 32071.0,
    "theo_usd": 32208.88,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -0.0602
   }
  ],
  "inspect": [
@@ -172,7 +182,8 @@
    "luck_score": 0.0,
    "house_win_usd": 15796.25,
    "theo_usd": 51961.0,
-   "days_on_floor": 181
+   "days_on_floor": 181,
+   "luck_z": -4.5701
   }
  ],
  "luck_tests_gm10": {
@@ -217,6 +228,17 @@
   "machines": 103,
   "total": 165,
   "note": "leads to inspect, not accusations"
+ },
+ "demand": {
+  "full_weeks": 25,
+  "first4_avg_usd": 9449862.89,
+  "last4_avg_usd": 9297905.6,
+  "change_pct": -1.61
+ },
+ "players": {
+  "wagered_usd": 163804869.65,
+  "won_back_usd": 148219409.05,
+  "net_usd": -15585460.6
  },
  "moves": [
   {
@@ -383,6 +405,15 @@
    "share_of_net_loss": 1.0
   }
  ],
+ "weekday_forecast": {
+  "Saturday": 1797914.26,
+  "Friday": 1647100.2,
+  "Sunday": 1440578.74,
+  "Thursday": 1288662.0,
+  "Monday": 1217689.05,
+  "Wednesday": 1158316.97,
+  "Tuesday": 1117368.48
+ },
  "model": {
   "metrics": [
    {
@@ -415,6 +446,6 @@
  "_meta": {
   "producer": "Sharvari (integration)",
   "script": "src/integrate_team.py",
-  "generated_at": "2026-11-07 22:57 UTC"
+  "generated_at": "2026-11-07 23:12 UTC"
  }
 }

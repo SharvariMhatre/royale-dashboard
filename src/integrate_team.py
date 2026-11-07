@@ -52,7 +52,7 @@ def main():
                  for a, ra in ret.items() if ra for b, rb in ins.items() if rb and rb.group(1) == ra.group(1) and loc[a] == loc[b]]
         F["same_slot"] = pairs
         F["gm10_rows"] = gm.sort_values("manager_rank")[["manager_rank", "machine_id", "zone_name", "location_id", "verdict", "reason", "luck_score",
-                                                          "house_win_usd", "theo_usd", "days_on_floor"]].round(4).to_dict("records")
+                                                          "house_win_usd", "theo_usd", "days_on_floor", "luck_z"]].round(4).to_dict("records")
         F["inspect"] = [r for r in F["gm10_rows"] if r["verdict"] == "Inspect"]
         lr = lambda x: "Supported" if x >= 0.20 else ("Unlikely" if x >= 0.01 else "Not supported")   # same rule as app/pages.py luck_result
         F["luck_tests_gm10"] = counts(gm.luck_score.map(lr))
@@ -80,6 +80,18 @@ def main():
     if lc is not None:
         F["leak_clues"] = {"by_rule": counts(lc.rule_failed), "machines": int(lc.machine_id.nunique()), "total": int(len(lc)),
                            "note": "leads to inspect, not accusations"}
+    dem = rd("p3_demand")
+    if dem is not None:   # Q2: first 4 vs last 4 complete Monday-Sunday weeks, floor-wide coin-in
+        day = dem.groupby("gaming_date").coin_in_usd.sum().reset_index()
+        day["week_start"] = pd.to_datetime(day.gaming_date).dt.to_period("W-SUN").dt.start_time
+        wk = day.groupby("week_start").agg(c=("coin_in_usd", "sum"), n=("gaming_date", "nunique"))
+        wk = wk[wk.n == 7].c
+        F["demand"] = {"full_weeks": int(len(wk)), "first4_avg_usd": round(float(wk.head(4).mean()), 2), "last4_avg_usd": round(float(wk.tail(4).mean()), 2),
+                       "change_pct": round(float(wk.tail(4).mean() / wk.head(4).mean() - 1) * 100, 2)}
+    pl = rd("p3_players")
+    if pl is not None:
+        F["players"] = {"wagered_usd": round(float(pl.wagered_usd.sum()), 2), "won_back_usd": round(float(pl.won_back_usd.sum()), 2),
+                        "net_usd": round(float(pl.net_usd.sum()), 2)}
     mv = rd("p2_move_effects")
     if mv is not None:
         F["moves"] = mv.assign(move_date=mv.move_date.astype(str)).round(4).to_dict("records")
@@ -102,6 +114,8 @@ def main():
         t = fr[fr.split == "test"]
         mae_m, mae_b = float((t.actual_usd - t.model_pred_usd).abs().mean()), float((t.actual_usd - t.baseline_pred_usd).abs().mean())
         match = m.iloc[(m.mae_usd - mae_m).abs().argsort().iloc[0]]
+        wd = fr[fr.split == "test"].assign(day=lambda d: pd.to_datetime(d.gaming_date).dt.day_name()).groupby("day").model_pred_usd.mean().sort_values(ascending=False)
+        F["weekday_forecast"] = {k: round(float(x), 2) for k, x in wd.items()}   # test-period mean of the model's daily forecast, busiest first
         F["model"] = {"metrics": m.round(2).to_dict("records"), "forecast_mae_model_usd": round(mae_m, 2),
                       "forecast_mae_baseline_usd": round(mae_b, 2), "test_days": int(len(t)),
                       "forecast_file_model_is": str(match.model_name) if abs(match.mae_usd - mae_m) < 1 else "unknown (no metrics row matches)",
