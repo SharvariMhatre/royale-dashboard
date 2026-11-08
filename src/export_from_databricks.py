@@ -2,9 +2,12 @@
 Credentials come from .env (DATABRICKS_HOST, DATABRICKS_HTTP_PATH, DATABRICKS_TOKEN); they are never printed.
 Usage: python -I src/export_from_databricks.py [table ...]     (no args = every table in TABLES)
 Needs: pip install -r requirements-export.txt  (kept out of the app's requirements.txt on purpose)"""
+import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pyarrow.parquet as pq
 from databricks import sql
@@ -56,6 +59,11 @@ def main(argv) -> int:
                 rows.append((t, n, "exported"))
             except Exception as e:
                 rows.append((t, "?", f"failed: {type(e).__name__}: {str(e).replace(token, '***')[:150]}"))
+    done = {t: n for t, n, note in rows if note == "exported"}
+    if done:  # the dashboard shows this time (Central) as the data version; it is not the file's modified date
+        (OUT / "_export.json").write_text(json.dumps({
+            "exported_at": datetime.now(ZoneInfo("America/Chicago")).isoformat(timespec="seconds"), "timezone": "America/Chicago",
+            "source": SCHEMA, "tables": done, "skipped": {t: note for t, n, note in rows if note != "exported"}}, indent=1))
     print(f"{'table':28}{'rows':>10}  note")
     for t, n, note in rows:
         print(f"{t:28}{n:>10,}  {note}" if isinstance(n, int) else f"{t:28}{n:>10}  {note}")

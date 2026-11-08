@@ -75,10 +75,20 @@ def load(name: str):
     return (df, None) if len(df) else (None, f"{name} is empty")
 
 
+def export_stamp() -> str | None:
+    """'Nov 7, 7:15 PM CT' from app_data/team/_export.json (written by src/export_from_databricks.py), or None."""
+    try:
+        d = datetime.fromisoformat(json.loads((APP_DATA / "team" / "_export.json").read_text())["exported_at"])
+    except Exception:
+        return None
+    return f"{d:%b} {d.day}, {int(d.strftime('%I'))}:{d:%M} {d:%p} CT"   # exported_at is already Central wall-clock time
+
+
 def data_version(name: str = "") -> str:
+    if name.startswith("team/"):   # never the file's modified date: it changes on every checkout
+        stamp = export_stamp()
+        return f"exported from Databricks on {stamp}" if stamp else "exported from Databricks (export time not recorded)"
     meta = _meta_path(APP_DATA / name) if name else None
-    if not meta and name and (APP_DATA / name).exists() and name.startswith("team/"):
-        return f"exported from Databricks (workspace.casino), file dated {datetime.fromtimestamp((APP_DATA / name).stat().st_mtime):%b} "                f"{datetime.fromtimestamp((APP_DATA / name).stat().st_mtime).day}"
     if meta:
         try:
             m = json.loads(meta.read_text())

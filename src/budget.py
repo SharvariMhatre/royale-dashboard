@@ -60,6 +60,9 @@ def load_proposals(team_dir: Path = TEAM, cat: pd.DataFrame | None = None,
         f = team_dir / f"{st_}.parquet"
         if f.exists():
             d = pd.read_parquet(f)
+            for c in d.columns:  # Databricks DECIMAL arrives as Decimal objects: use floats so cost arithmetic works
+                if d[c].dtype == object and d[c].notna().any() and type(d[c].dropna().iloc[0]).__name__ == "Decimal":
+                    d[c] = d[c].astype(float)
             d.insert(0, "source", st_)
             parts.append(d)
     if not parts:

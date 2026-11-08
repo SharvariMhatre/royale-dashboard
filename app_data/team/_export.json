@@ -1,0 +1,34 @@
+{
+ "exported_at": "2026-11-07T19:15:39-06:00",
+ "timezone": "America/Chicago",
+ "source": "workspace.casino",
+ "tables": {
+  "p1_downtime": 55092,
+  "p1_comps": 18,
+  "p1_leak_clues": 165,
+  "p2_verdicts": 310,
+  "p2_luck_sims": 155000,
+  "p2_move_effects": 4,
+  "p3_demand": 1267,
+  "p3_forecast_results": 181,
+  "p3_model_metrics": 3,
+  "p3_players": 180,
+  "p3_concentration": 7,
+  "p1_claims": 10,
+  "p2_claims": 10,
+  "p3_claims": 7,
+  "p1_actions": 4,
+  "p2_actions": 3,
+  "p3_actions": 3,
+  "final_budget_plan": 3,
+  "p2_zone_index": 7,
+  "p2_b40_closure_effect": 3,
+  "p2_inspection_candidates": 1,
+  "p2_luck_scores": 310,
+  "p2_manager_bottom10": 10
+ },
+ "skipped": {
+  "all_claims": "missing in workspace.casino, skipped",
+  "all_actions": "missing in workspace.casino, skipped"
+ }
+}

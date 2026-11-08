@@ -67,7 +67,8 @@ def main():
                                      "max_abs_diff_vs_file_all_machines": round(float(diff.max()), 3),
                                      "sims_per_machine": int(s.groupby("machine_id").size().median())}
         F["availability_units"] = {"p2_verdicts_max": round(float(v.availability_pct.max()), 3),
-                                   "note": "p2_verdicts availability_pct is a fraction (max 1.0); p1_downtime availability_pct is 0-100"}
+                                   "note": ("p2_verdicts availability_pct is a fraction (max 1.0); p1_downtime availability_pct is 0-100"
+                            if v.availability_pct.max() <= 1.5 else "p2_verdicts and p1_downtime availability_pct are both 0-100")}
 
     d = rd("p1_downtime")
     if d is not None:

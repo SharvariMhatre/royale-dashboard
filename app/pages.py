@@ -341,7 +341,8 @@ def overview(sel):
                 columns={"house_win_usd": "win_sel", "availability": "avail_sel"})
             g = g.merge(t, on="machine_id", how="left")
         else:
-            g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct
+            # availability_pct is 0-100 since the Nov 7 rebuild (it was a 0-1 fraction before): show it as a share either way
+            g["win_sel"], g["avail_sel"] = g.house_win_usd, g.availability_pct.where(g.availability_pct <= 1.5, g.availability_pct / 100)
         g["luck_test"] = g.luck_score.map(luck_result)
         with st.expander("Full evidence table for the GM's 10 (money follows your period and bank filters)", expanded=not full_scope):
             show(g, {"manager_rank": ("GM rank", "int"), "machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"),
@@ -597,7 +598,7 @@ def details(sel):
     mid = st.selectbox("Machine (the GM's 10 first)", ids, index=ids.index(want) if want in ids else 0, format_func=lambda m: names[m])
     r = v[v.machine_id == mid].iloc[0]
     peer = r.theo_per_hour_usd / r.peer_theo_per_hour_usd if r.peer_theo_per_hour_usd else float("nan")
-    avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # p2 file stores a fraction
+    avail = r.availability_pct if r.availability_pct <= 1.5 else r.availability_pct / 100  # 0-100 since the rebuild, a 0-1 fraction before
     checks = [
         ("Luck", f"{r.luck_score:.1%} of fair replays over its {int(r.days_on_floor)} days on the floor did this badly or worse", luck_result(r.luck_score)),
         ("Short time on the floor", f"{int(r.days_on_floor)} of 181 days", "Supported" if r.days_on_floor < 150 else "Not supported"),

@@ -41,3 +41,12 @@ assert list(pb.action_type_id) == ["A-INSPECT", "A-MOVE-MACHINE"]
 assert pb.months_to_pay_back.iloc[0] == 2.0 and pd.isna(pb.months_to_pay_back.iloc[1])
 assert pb.net_3m_expected.iloc[0] == 600. and pb.net_6m_high.iloc[0] == 6000. and pb.net_3m_low.iloc[1] == -1015.
 print("payback: all checks passed")
+# DECIMAL columns (as exported from Databricks) must not break the cost check
+from decimal import Decimal
+with tempfile.TemporaryDirectory() as t2:
+    t2 = Path(t2)
+    pd.DataFrame([{**line("A-INSPECT", 1), "cost_usd": Decimal("1200.00"), "expected_benefit_usd": Decimal("2897.0"),
+                   "low_estimate_usd": Decimal("0"), "high_estimate_usd": Decimal("5794")}]).to_parquet(t2 / "final_budget_plan.parquet")
+    dd = budget.load_proposals(t2, cat, stems=("final_budget_plan",))
+    assert dd.issues.iloc[0] == "" and dd.cost_recomputed_usd.iloc[0] == 1200.0
+print("decimal columns: all checks passed")
