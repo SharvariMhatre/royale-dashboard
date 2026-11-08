@@ -10,3 +10,4 @@
 - 2026-11-07 Claude: revised docs per Sharvari (all six questions, same-game zone wording, model decision, Inspect rule |z|>3.29); ai_disclosure tools updated.
 - 2026-11-07 Claude: Ocean Depths theme, chart helpers, KPI rows; browser checks via Chrome.
 - 2026-11-07 Claude: applied Redesign patch (authored in a separate Claude Code Opus 5.5 session) via git am; re-ran tests/pages.
+- 2026-11-07 Claude: applied 0002 patch (interactive map + illustrations; authored in a separate Claude Code Opus 5.5 session); re-ran tests and pages.
