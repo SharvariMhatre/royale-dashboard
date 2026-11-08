@@ -34,8 +34,12 @@ def main():
     if parts:
         c = pd.concat(parts, ignore_index=True)
         assert c.claim_id.is_unique, "claim_id collides across p1/p2/p3"
+        # claims still holding template text ("EDIT: ...") are not shown to judges until the owner fills them in
+        ph = c.apply(lambda r: r.astype(str).str.contains("EDIT:", regex=False).any(), axis=1)
+        excluded = c.loc[ph, ["claim_id", "question"]].to_dict("records")
+        c = c[~ph].reset_index(drop=True)
         c.to_parquet(TEAM / "all_claims.parquet", index=False)
-        F["claims"] = {"count": int(len(c)), "by_question": counts(c.question)}
+        F["claims"] = {"count": int(len(c)), "by_question": counts(c.question), "excluded_unfilled_template": excluded}
 
     v = rd("p2_verdicts")
     if v is not None:
@@ -125,6 +129,31 @@ def main():
     cp = rd("p1_comps")
     if cp is not None:
         F["comps"] = {"comp_cost_usd": round(float(cp.comp_cost_usd.sum()), 2), "months": int(cp.month.nunique())}
+    fp_file = TEAM / "final_budget_plan.parquet"
+    if fp_file.exists():   # the team's chosen plan, with costs recomputed by the guide formula (src/budget.py)
+        import sys
+        sys.path.insert(0, str(ROOT / "src"))
+        import budget
+        cat = budget.catalog()
+        fp = budget.load_proposals(stems=("final_budget_plan",), cat=cat)
+        pb = budget.payback(fp).set_index("action_type_id").months_to_pay_back.to_dict()
+        lines = []
+        for r in fp.itertuples():
+            tg = str(r.targets)
+            ctl = re.search(r"controls stay:\s*([^)]*)", tg)
+            lift = re.search(r"lift [A-Za-z ]+ play (\d+(?:\.\d+)?)% \((\d+)-(\d+)%\)", str(r.how_to_measure))
+            lines.append({"action": r.action, "action_type_id": r.action_type_id, "quantity": int(r.quantity),
+                          "targets": re.sub(r"\s*\(controls stay:[^)]*\)", "", tg).strip(), "controls": ctl.group(1).strip() if ctl else "",
+                          "cost_usd": round(float(r.cost_recomputed_usd), 2), "cost_matches_file": not str(r.issues).startswith("cost mismatch"),
+                          "expected_benefit_usd": round(float(r.expected_benefit_usd), 2), "low_usd": round(float(r.low_estimate_usd), 2),
+                          "high_usd": round(float(r.high_estimate_usd), 2), "confidence": str(r.confidence).strip(),
+                          "assumed_lift_pct": float(lift.group(1)) if lift else None, "how_to_measure": str(r.how_to_measure)})
+        tot = fp.cost_recomputed_usd.sum()
+        F["final_plan"] = {"lines": lines, "total_cost_usd": round(float(tot), 2), "kept_usd": round(100000 - float(tot), 2),
+                           "expected_usd": round(float(fp.expected_benefit_usd.sum()), 2), "low_usd": round(float(fp.low_estimate_usd.sum()), 2),
+                           "high_usd": round(float(fp.high_estimate_usd.sum()), 2), "rule_errors": budget.check_plan(fp, cat),
+                           "payback_months": {k: (None if pd.isna(v) else round(float(v), 2)) for k, v in pb.items()},
+                           "action_types": int(fp.action_type_id.nunique())}
     F["_meta"] = {"producer": "Sharvari (integration)", "script": SCRIPT,
                   "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     OUT.parent.mkdir(parents=True, exist_ok=True)

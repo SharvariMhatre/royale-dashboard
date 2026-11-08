@@ -12,3 +12,4 @@
 - 2026-11-07 Claude: applied Redesign patch (authored in a separate Claude Code Opus 5.5 session) via git am; re-ran tests/pages.
 - 2026-11-07 Claude: applied 0002 patch (interactive map + illustrations; authored in a separate Claude Code Opus 5.5 session); re-ran tests and pages.
 - 2026-11-07 Claude: re-exported after p2 rebuild, compared old vs new, added _export.json and export-time chip, fixed Decimal bug in budget.py.
+- 2026-11-07 Claude: team plan on Overview, make_docs Q6 from final_budget_plan, README, EDIT-template detection; deleted the two patch files at the user's request.

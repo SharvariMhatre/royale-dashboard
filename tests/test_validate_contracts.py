@@ -34,4 +34,11 @@ with tempfile.TemporaryDirectory() as t:
                        "net_usd": [0.], "player_count": [5]})
     assert any("smaller than 10" in x for x in validate(put("p3_players", pl)))
     assert validate(t / "nope.parquet")[0].endswith("file not found")
+# unfilled template text is a warning (shown in the footer), not an error
+with tempfile.TemporaryDirectory() as t3:
+    t3 = Path(t3)
+    cl = pd.DataFrame({k: ["x", "y"] for k in CLAIM_COLS}).assign(claim_id=["P-1", "P-2"], claim=["EDIT: fill me in", "real claim"])
+    cl.to_parquet(t3 / "p3_claims.parquet")
+    e, w = check(t3 / "p3_claims.parquet")
+    assert e == [] and any("EDIT:" in x and "1 rows" in x for x in w), (e, w)
 print("validate_contracts: all checks passed")

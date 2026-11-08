@@ -82,6 +82,8 @@ def load_proposals(team_dir: Path = TEAM, cat: pd.DataFrame | None = None,
             f.append(f"matched by wording to {t}")
         if abs(cost - r.cost_usd) > 1:
             f.append(f"cost mismatch: file ${r.cost_usd:,.0f} vs guide ${cost:,.0f}")
+        if "EDIT:" in f"{r.targets} {r.how_to_measure}":
+            f.append("placeholder text ('EDIT:') not filled in by the team")
         if r.quantity > c.quantity_limit:
             f.append(f"quantity {r.quantity} above limit {int(c.quantity_limit)}")
         if not (r.low_estimate_usd <= r.expected_benefit_usd <= r.high_estimate_usd):
@@ -91,7 +93,7 @@ def load_proposals(team_dir: Path = TEAM, cat: pd.DataFrame | None = None,
     return d
 
 
-PERMANENT = {"A-MOVE-MACHINE", "A-MOVE-BANK", "A-INSPECT"}  # one-time cost, benefit can continue after the 30-day window
+PERMANENT = {"A-MOVE-MACHINE", "A-MOVE-BANK", "A-INSPECT", "A-WAYFINDING"}  # one-time cost, benefit can continue after the 30-day window
 
 
 def payback(lines: pd.DataFrame, months=(3, 6)) -> pd.DataFrame:

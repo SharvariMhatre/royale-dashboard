@@ -41,33 +41,42 @@ wf = list(T["weekday_forecast"].items())          # busiest first
 assert mv["adjusted_change_pct"] > 1.0            # "more than doubled" must be true
 ZONE = "the floor rate for the same games"        # zone_index compares a zone with the floor for the SAME games
 
+FP = T["final_plan"]
+assert not FP["rule_errors"] and all(l["cost_matches_file"] for l in FP["lines"]), "final plan breaks a rule or a cost does not match the guide formula"
+PLN = {l["action_type_id"]: l for l in FP["lines"]}
+ins, sig, mov = PLN["A-INSPECT"], PLN["A-WAYFINDING"], PLN["A-MOVE-MACHINE"]
+rtp = re.search(r"configured (\d+)% RTP", ins["how_to_measure"]).group(1)
+live, before_days = re.search(r"(\d+) live days after install vs the (\d+) days before", sig["how_to_measure"]).groups()
+n_moved = len(re.findall(r"M-\d+", mov["targets"]))
+pbm = FP["payback_months"]
+
 W = f"""# The Gilded Ace: should we replace the 10 lowest machines?
 
 ## Problem
-The GM wants to replace the 10 lowest-earning machines (Jan 1 to Jun 30, 2025). Low earnings can come from luck, location or a leak. We tested all three.
+The GM wants to replace the 10 lowest-earning machines (Jan to Jun 2025). Low earnings can come from luck, location or a leak. We tested all three.
 
 ## Q1: which machines are truly underperforming?
 - {V['gm10_truly_bad']} of the GM's {V['gm10_n']} are truly bad: {parts}.
-- {V['gm10_in_b40']} sit in {top}, which earns {pct(zones[top]['zone_index_vs_floor'])} of {ZONE}. During the walkway closure it earned {pct(during)} of the rest of the floor, against {pct(before)} before and {pct(after)} after.
+- {V['gm10_in_b40']} sit in {top}, which earns {pct(zones[top]['zone_index_vs_floor'])} of {ZONE}. It earned {pct(during)} of the rest of the floor during the walkway closure, {pct(before)} before and {pct(after)} after.
 - The casino already replaced one machine in slot {slot['location']} on {slot['date']}, and the replacement landed on the list too: replacing doesn't fix a bad spot.
 - {mv['machine_id']} more than doubled its earnings per available hour after moving from {mv['from_zone']} to {mv['to_zone']} (+{pct(mv['adjusted_change_pct'])} vs unmoved machines). Only {len(T['moves'])} machines moved.
 - {insp['machine_id']} is an inspect lead (hold {hold.group(1)}% against {hold.group(2)}% expected), a lead to check, not an accusation.
-- Tests: 10,000 fair replays per machine for luck (a supported explanation for {lt['Supported']} of the 10, unlikely for {lt['Unlikely']}, not supported for {lt['Not supported']}), and each machine against the same game elsewhere.
+- Luck test: 10,000 fair replays per machine (a supported explanation for {lt['Supported']} of the 10, unlikely for {lt['Unlikely']}, not supported for {lt['Not supported']}).
 
 ## Q2 to Q5
 - **Demand:** coin-in changed {D['change_pct']:+.1f}% from the first to the last 4 full weeks.
-- **Downtime:** {pct(DN['share_of_scheduled'], 2)} of scheduled hours, at most {usd(DN['lost_theo_usd'])} of expected win. It does not explain the list.
+- **Downtime:** {pct(DN['share_of_scheduled'], 2)} of scheduled hours, at most {usd(DN['lost_theo_usd'])} of expected win, so not the cause.
 - **Players:** tracked players lost {musd(PL['net_usd'])} against {musd(Q4['theo_usd'])} expected. The top 10% hold {pct(Q4['top10pct_share_of_theo'])} of expected losses.
 - **Comps:** {kusd(Q5['comp_cost_usd'])}, rising from {pct(r5['2025-01'], 2)} to {pct(r5['2025-06'], 2)} of theo, Jan to Jun.
 
 ## Model
-Weekday plus events misses daily coin-in by {usd(best['mae_usd'])} on May and June, against {usd(base['mae_usd'])} for a constant baseline (train Jan to Apr, test May to Jun). It changes where staffing goes: {wf[0][0]} ({musd(wf[0][1])}) and {wf[1][0]} ({musd(wf[1][1])}) are forecast busiest, so an extra technician shift goes there, and the forecast is the baseline for measuring a promotion weekend's lift.
+Weekday plus events misses daily coin-in by {usd(best['mae_usd'])} on May and June, against {usd(base['mae_usd'])} for a constant baseline (train Jan to Apr, test May to Jun). {wf[0][0]} ({musd(wf[0][1])}) and {wf[1][0]} ({musd(wf[1][1])}) are forecast busiest, so the extra technician shift goes there.
 
 ## Q6: $100,000 plan
-PENDING: team decision at 6 PM. For comparison, the GM's own plan (replace 10 machines) costs {usd(gp['cost_usd'])} with an estimated {usd(gp['expected_benefit_usd'])} benefit.
+Fund three actions for {usd(FP['total_cost_usd'])} and keep {usd(FP['kept_usd'])}: inspect {ins['targets']} ({usd(ins['cost_usd'])}); Back Forty signs ({usd(sig['cost_usd'])}, assuming a {sig['assumed_lift_pct']:.0f}% lift); move {n_moved} machines with matched controls ({usd(mov['cost_usd'])}). Expected benefit is {usd(FP['expected_usd'])} over 30 days, range {usd(FP['low_usd'])} to {usd(FP['high_usd'])}. Moves and signs keep paying after the 30-day window, an assumption beyond the guide.
 
 ## How we would measure it
-Each funded action gets one metric, a baseline or control, and a 30-day check. Final measures follow the plan decision.
+Inspection: July hold against the {rtp}% payout rate. Signs: Back Forty expected win per hour, {live} live days after install against the {before_days} before, other zones as comparison. Moves: matched same-game controls, measured into August.
 """
 n = len(re.sub(r"[#*\-]+", " ", W).split())
 assert n <= 400, f"write-up has {n} words"
@@ -129,7 +138,7 @@ Train {T['model']['train']}, test {T['model']['test']} ({T['model']['test_days']
 No. There are {LF['total']} clues on {LF['machines']} machines. They are rule flags to inspect, such as long outages or repeat faults. Downtime in total is {pct(DN['share_of_scheduled'], 2)} of scheduled hours, so it does not explain the bottom 10.
 
 **6. How will you know the plan worked?**
-PENDING: depends on the plan chosen at 6 PM. Each action will have one metric, a baseline or control and a 30-day check. The budget page shows how each line would be measured and a payback sensitivity beyond 30 days, labelled as an assumption.
+Each action has one metric and a control or baseline. Inspection: July hold against the {rtp}% payout rate. Signs: Back Forty expected win per hour, {live} live days after install against the {before_days} days before, with the other zones as comparison. Moves: each moved machine has a same-game partner left in place, and we keep measuring into August because 30 days is short. Moves and signs may keep paying after day 30; the Overview shows payback ({pbm['A-INSPECT']:.1f} months for the inspection, {pbm['A-WAYFINDING']:.1f} for signs, {pbm['A-MOVE-MACHINE']:.1f} for moves) as a labelled assumption beyond the guide's 30-day window. The plan spends {usd(FP['total_cost_usd'])} and keeps {usd(FP['kept_usd'])}; expected benefit is {usd(FP['expected_usd'])}, range {usd(FP['low_usd'])} to {usd(FP['high_usd'])}.
 """
 assert "—" not in J and "—" not in "\n".join(E)
 (DOCS / "judge_qa.md").write_text(J, encoding="utf8")

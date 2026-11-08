@@ -50,3 +50,10 @@ with tempfile.TemporaryDirectory() as t2:
     dd = budget.load_proposals(t2, cat, stems=("final_budget_plan",))
     assert dd.issues.iloc[0] == "" and dd.cost_recomputed_usd.iloc[0] == 1200.0
 print("decimal columns: all checks passed")
+# placeholder text in a team line is flagged; signs count as a one-time action for the payback sensitivity
+with tempfile.TemporaryDirectory() as t4:
+    t4 = Path(t4)
+    pd.DataFrame([{**line("A-WAYFINDING", 1, "EDIT: weakest zone"), "expected_benefit_usd": 7500.0}]).to_parquet(t4 / "p3_actions.parquet")
+    dd = budget.load_proposals(t4, cat)
+    assert "EDIT:" in dd.issues.iloc[0] and list(budget.payback(dd).months_to_pay_back) == [1.0]
+print("placeholder + signs payback: all checks passed")

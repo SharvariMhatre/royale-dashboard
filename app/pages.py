@@ -511,13 +511,93 @@ def _zone_evidence():
     source("team/p2_zone_index.parquet, team/p2_b40_closure_effect.parquet", "Bharath's notebook (p2)", "Full period; closure split as published by the team")
 
 
+def _payback_block(lines, props, cat):
+    """Payback after 30 days: ASSUMPTION beyond the guide's window, shown for one-time actions (moves, signs, inspection)."""
+    pb = budget.payback(lines)
+    note = ""
+    if pb.empty and props is not None and (props.action_type_id.isin(budget.PERMANENT)).any():
+        pb, note = budget.payback(props), "No one-time action picked yet: showing the team's proposed ones."
+    if pb.empty:
+        return
+    st.markdown("**Payback after 30 days (sensitivity)** " + note)
+    st.warning("Assumption beyond the guide's 30-day window, not part of the scored plan: a moved machine, new signs or an inspection keeps its "
+               "30-day benefit every month at the same size (no decay, no extra cost). Real benefits may fade or never repeat.")
+    pb = pb.assign(name=pb.action_type_id.map(cat["name"]), pay=pb.months_to_pay_back.map(lambda m: "does not pay back" if pd.isna(m) else f"{m:.1f} months"),
+                   n3=pb.apply(lambda r: f"{usd(r.net_3m_expected)} ({usd(r.net_3m_low)} to {usd(r.net_3m_high)})", axis=1),
+                   n6=pb.apply(lambda r: f"{usd(r.net_6m_expected)} ({usd(r.net_6m_low)} to {usd(r.net_6m_high)})", axis=1))
+    show(pb, {"name": ("Action", "text"), "cost_recomputed_usd": ("One-time cost", "usd"), "expected_benefit_usd": ("Benefit in first 30 days", "usd"),
+              "pay": ("Pays back after", "text"), "n3": ("Net after 3 months: expected (low to high)", "text"),
+              "n6": ("Net after 6 months: expected (low to high)", "text")})
+
+
+# evidence keywords per recommendation: which claims back it up
+PLAN_EVIDENCE = {"A-INSPECT": ["M-1158"], "A-MOVE-MACHINE": ["moved", "location causes"], "A-WAYFINDING": ["walkway", "closure"]}
+
+
+def _team_plan(cat) -> bool:
+    """The team's final_budget_plan shown by default. Returns False when the file is missing or invalid (the builder is then the main thing)."""
+    plan = budget.load_proposals(stems=("final_budget_plan",), cat=cat)
+    plan = plan[plan.action_type_id.notna()].reset_index(drop=True) if len(plan) else plan
+    if plan is None or plan.empty:
+        return False
+    cost = float(plan.cost_recomputed_usd.sum())
+    exp, lo, hi = (float(plan[c].sum()) for c in ("expected_benefit_usd", "low_estimate_usd", "high_estimate_usd"))
+    T.meter(cost, 100000, plan.action_type_id.nunique())
+    T.kpis([("Spent", usd(cost)), ("Kept", usd(100000 - cost)), ("Expected benefit, 30 days", usd(exp)), ("Benefit range", f"{usd(lo)} to {usd(hi)}")])
+    for e in budget.check_plan(plan, cat):
+        st.error(e)
+    st.caption("Benefit and range are sums of the team's 30-day estimates (the range assumes every line lands low or high together). "
+               "Costs are recomputed with the guide formula and match the team's file.")
+    vv, mv = team("p2_verdicts"), team("p2_move_effects")
+    for r in plan.itertuples():
+        nm = cat.loc[r.action_type_id, "name"]
+        tg = str(r.targets)
+        controls = re.search(r"controls stay:\s*([^)]*)", tg)
+        main = re.sub(r"\s*\(controls stay:[^)]*\)", "", tg).strip()
+        with st.container(border=True):
+            st.markdown(f"**{nm}**" + (f" x{int(r.quantity)}" if r.quantity > 1 else ""))
+            c = st.columns(4)
+            c[0].metric("Cost", usd(r.cost_recomputed_usd))
+            c[1].metric("Expected benefit", usd(r.expected_benefit_usd))
+            c[2].metric("Range", f"{usd(r.low_estimate_usd)} to {usd(r.high_estimate_usd)}")
+            c[3].metric("Confidence", str(r.confidence).strip().capitalize())
+            st.markdown(f"**Targets:** {main}" + (f"  \n**Controls (left in place):** {controls.group(1).strip()}" if controls else ""))
+            meas = str(r.how_to_measure)
+            asm = re.search(r"Assumption:[^.]*(?:\([^)]*\))?[^.]*\.", meas)
+            if asm:
+                T.info("**Assumption.** " + asm.group(0).replace("Assumption:", "").strip())
+                meas = meas.replace(asm.group(0), "").strip()
+            st.markdown(f"**How we would know it worked:** {meas}")
+            ids = re.findall(r"M-\d+", tg)
+            if vv is not None and ids:
+                show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
+                     "luck_score": ("Luck percentile", "pct1"), "reason": ("Why", "text")}, wrap=True)
+            if r.action_type_id == "A-MOVE-MACHINE" and mv is not None:
+                st.caption("Observed moves so far (only 4 machines moved, so this is thin evidence):")
+                show(mv, {"machine_id": ("Machine", "text"), "from_zone": ("From", "text"), "to_zone": ("To", "text"), "days_after": ("Days observed", "int"),
+                          "adjusted_change_pct": ("Change vs unmoved floor", "pct")})
+            if r.issues:
+                st.warning(f"{nm}: {r.issues}")
+            evidence([], title=f"Evidence for {nm}", match=PLAN_EVIDENCE.get(r.action_type_id, [nm]))
+    _payback_block(plan, None, cat)
+    source("team/final_budget_plan.parquet", "team decision + src/budget.py checks", "30 days from 2025-07-01")
+    return True
+
+
 def budget_section(sel):
-    T.section("04", "The $100,000 plan", "Pick up to 3 action types from the team's proposals. Costs are recomputed with the guide formula; "
-              "the meter enforces the budget. Keeping money is a valid answer.")
     q6, _ = load("min_q6.parquet")
     props, cat = None, None
+    team_shown = False
     try:
         cat = budget.catalog()
+        T.section("04", "The team's plan", "What we would fund with the $100,000 over 30 days from July 1: up to 3 action types, each with its cost, "
+                  "benefit range, how we would know it worked and the evidence behind it. Keeping money is a valid answer.")
+        team_shown = _team_plan(cat)
+        if team_shown:
+            T.section("05", "Try your own plan", "Pick up to 3 action types from the teams' proposals. Costs are recomputed with the guide formula; "
+                      "the meter enforces the budget.")
+        else:
+            st.caption("The team's final plan is not available yet; build one below.")
         props = budget.load_proposals(cat=cat)
         props = props[props.action_type_id.notna()].reset_index(drop=True) if len(props) else None
     except Exception as e:  # never break the page over the builder
@@ -558,21 +638,7 @@ def budget_section(sel):
                     show(vv[vv.machine_id.isin(ids)], {"machine_id": ("Target machine", "text"), "zone_name": ("Zone", "text"), "verdict": ("Verdict", "verdict"),
                          "luck_score": ("Luck percentile", "pct"), "reason": ("Why", "text")}, wrap=True)
                 evidence(EVID_Q.get(t, ["Q1"]), title=f"Evidence for {nm}", expanded=True)
-            pb = budget.payback(chosen)
-            if pb.empty and (props.action_type_id.isin(budget.PERMANENT)).any():
-                pb, note = budget.payback(props), "No permanent action picked yet: showing the team's proposed ones."
-            else:
-                note = ""
-            if not pb.empty:
-                st.markdown("**Payback after 30 days (sensitivity)** " + note)
-                st.warning("Assumption beyond the guide's 30-day window, not part of the scored plan: a moved machine or an inspection keeps its "
-                           "30-day benefit every month at the same size (no decay, no extra cost). Real benefits may fade or never repeat.")
-                pb = pb.assign(name=pb.action_type_id.map(cat["name"]), pay=pb.months_to_pay_back.map(lambda m: "does not pay back" if pd.isna(m) else f"{m:.1f} months"),
-                               n3=pb.apply(lambda r: f"{usd(r.net_3m_expected)} ({usd(r.net_3m_low)} to {usd(r.net_3m_high)})", axis=1),
-                               n6=pb.apply(lambda r: f"{usd(r.net_6m_expected)} ({usd(r.net_6m_low)} to {usd(r.net_6m_high)})", axis=1))
-                show(pb, {"name": ("Action", "text"), "cost_recomputed_usd": ("One-time cost", "usd"), "expected_benefit_usd": ("Benefit in first 30 days", "usd"),
-                          "pay": ("Pays back after", "text"), "n3": ("Net after 3 months: expected (low to high)", "text"),
-                          "n6": ("Net after 6 months: expected (low to high)", "text")})
+            _payback_block(chosen, props, cat)
         else:
             T.meter(0, 100000, 0)
         source("team/p1_actions, p2_actions, p3_actions + min_q6.parquet", "teams' notebooks + src/budget.py", "30 days from 2025-07-01")

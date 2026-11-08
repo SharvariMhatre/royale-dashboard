@@ -103,6 +103,11 @@ def check(path) -> tuple[list[str], list[str]]:
                 errs.append(f"{p.name}: quantity must be positive")
             if (df.low_estimate_usd > df.high_estimate_usd).any():
                 errs.append(f"{p.name}: low_estimate_usd must be <= high_estimate_usd")
+    txt = [c for c in df.columns if pd.api.types.is_string_dtype(df[c]) or df[c].dtype == object]
+    if txt:  # unfinished template text left in a team file ("EDIT: ...")
+        ph = int(df[txt].astype(str).apply(lambda col: col.str.contains("EDIT:", regex=False)).any(axis=1).sum())
+        if ph:
+            warns.append(f"{p.name}: {ph} rows contain unfilled 'EDIT:' template text")
     mp = meta_path(p)
     if mp is None:
         warns.append(f"{p.name}: no _meta sidecar (version unknown)")

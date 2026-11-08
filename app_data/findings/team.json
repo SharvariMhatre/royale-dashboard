@@ -1,15 +1,36 @@
 {
  "claims": {
-  "count": 27,
+  "count": 22,
   "by_question": {
    "Q1": 10,
    "Q3": 5,
    "Q5": 4,
-   "Q2": 3,
-   "Model": 2,
-   "Q4": 2,
-   "Pipeline": 1
-  }
+   "Pipeline": 1,
+   "Model": 1,
+   "Q4": 1
+  },
+  "excluded_unfilled_template": [
+   {
+    "claim_id": "P3-02",
+    "question": "Model"
+   },
+   {
+    "claim_id": "P3-03",
+    "question": "Q2"
+   },
+   {
+    "claim_id": "P3-04",
+    "question": "Q2"
+   },
+   {
+    "claim_id": "P3-05",
+    "question": "Q2"
+   },
+   {
+    "claim_id": "P3-07",
+    "question": "Q4"
+   }
+  ]
  },
  "verdicts": {
   "gm10": {
@@ -443,9 +464,70 @@
   "comp_cost_usd": 190669.3,
   "months": 6
  },
+ "final_plan": {
+  "lines": [
+   {
+    "action": "Machine inspection and paytable verification",
+    "action_type_id": "A-INSPECT",
+    "quantity": 1,
+    "targets": "M-1158",
+    "controls": "",
+    "cost_usd": 1200.0,
+    "cost_matches_file": true,
+    "expected_benefit_usd": 2897.0,
+    "low_usd": 0.0,
+    "high_usd": 5794.0,
+    "confidence": "Medium",
+    "assumed_lift_pct": null,
+    "how_to_measure": "Compare July hold with the configured 90% RTP; a luck z-score back inside +/-2 means the payout is normal. If the paytable is wrong, fix it and re-check after 30 days."
+   },
+   {
+    "action": "Wayfinding and signage refresh for a zone",
+    "action_type_id": "A-WAYFINDING",
+    "quantity": 1,
+    "targets": "Back Forty (Z-B40)",
+    "controls": "",
+    "cost_usd": 7500.0,
+    "cost_matches_file": true,
+    "expected_benefit_usd": 5300.0,
+    "low_usd": 0.0,
+    "high_usd": 13400.0,
+    "confidence": "Low",
+    "assumed_lift_pct": 2.0,
+    "how_to_measure": "Back Forty expected win per available hour and door entries, 20 live days after install vs the 30 days before; other zones are the comparison. Assumption: signs lift Back Forty play 2% (0-5%), far less than the 21-point drop seen when its walkway closed."
+   },
+   {
+    "action": "Relocate one machine",
+    "action_type_id": "A-MOVE-MACHINE",
+    "quantity": 3,
+    "targets": "M-1181, M-1017, M-1265",
+    "controls": "M-1179, M-1035, M-1238",
+    "cost_usd": 5400.0,
+    "cost_matches_file": true,
+    "expected_benefit_usd": 4340.0,
+    "low_usd": 0.0,
+    "high_usd": 8680.0,
+    "confidence": "Low",
+    "assumed_lift_pct": null,
+    "how_to_measure": "Matched experiment: each moved machine has a same-game partner left in Back Forty. Compare expected win per available hour, July vs Jan-Jun, moved vs control (difference-in-differences). 30 days is short, so keep measuring into August before scaling to the rest of Back Forty."
+   }
+  ],
+  "total_cost_usd": 14100.0,
+  "kept_usd": 85900.0,
+  "expected_usd": 12537.0,
+  "low_usd": 0.0,
+  "high_usd": 27874.0,
+  "rule_errors": [],
+  "payback_months": {
+   "A-INSPECT": 0.41,
+   "A-WAYFINDING": 1.42,
+   "A-MOVE-MACHINE": 1.24
+  },
+  "action_types": 3
+ },
  "_meta": {
   "producer": "Sharvari (integration)",
   "script": "src/integrate_team.py",
-  "generated_at": "2026-11-08 01:16 UTC"
+  "generated_at": "2026-11-08 01:25 UTC"
  }
 }

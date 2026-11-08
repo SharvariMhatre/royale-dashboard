@@ -224,12 +224,20 @@ def tfind(key: str):
         return None
 
 
-def evidence(questions: list[str], machine: str | None = None, title: str = "Evidence: claims behind this page", expanded: bool = False):
-    """Expander listing the team's claims for these questions (alternative tested + limitation shown). Machine claims first."""
+def evidence(questions: list[str], machine: str | None = None, title: str = "Evidence: claims behind this page", expanded: bool = False,
+             match: list[str] | None = None):
+    """Expander listing the team's claims for these questions (alternative tested + limitation shown). Machine claims first.
+    match=[keywords]: list only claims (any question) whose claim/result mention one of them, e.g. the evidence for one recommendation."""
     c = team("all_claims")
     if c is None:
         return
-    c = c[c.question.isin(questions)].copy()
+    if match:
+        low = [m.lower() for m in match]
+        c = c[c.apply(lambda r: any(m in f"{r.claim} {r.result}".lower() for m in low), axis=1)].copy()
+        if c.empty:
+            return
+    else:
+        c = c[c.question.isin(questions)].copy()
     if machine:
         hit = c.apply(lambda r: machine in f"{r.claim} {r.result}", axis=1)
         c = pd.concat([c[hit], c[~hit]])
