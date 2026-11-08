@@ -1,6 +1,6 @@
 """Original SVG illustrations for the dashboard (drawn in code: no external images, no third-party art).
 Decorative art is aria-hidden; anything that carries meaning also has text next to it."""
-from theme import NAVY, TEAL, TEAL_DARK, SEAFOAM, CREAM, VERDICT_COLOR
+from theme import NAVY, TEAL, TEAL_DARK, SEAFOAM, CREAM, MUTED, DANGER, HIGHLIGHT, HIGHLIGHT_SOFT, VERDICT_COLOR
 
 _A = 'aria-hidden="true" focusable="false"'
 
@@ -37,16 +37,16 @@ def hero_floor() -> str:
         ("Garage", 248, 150, 70, 38, 5, 2, False)]
     g = []
     for lab, x, y, w, h, c, r, hi in zones:
-        stroke = "#E69F00" if hi else TEAL
-        fill = "#E69F0022" if hi else "none"
+        stroke = HIGHLIGHT if hi else TEAL
+        fill = f"{HIGHLIGHT}22" if hi else "none"
         dash = 'stroke-dasharray="5 4"' if hi else ""
         g.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" fill="{fill}" stroke="{stroke}" stroke-width="1.5" {dash}/>')
-        g.append(slots(x + 8, y + 10, c, r, "#E69F00" if hi else SEAFOAM, 0.85 if hi else 0.55))
+        g.append(slots(x + 8, y + 10, c, r, HIGHLIGHT if hi else SEAFOAM, 0.85 if hi else 0.55))
         g.append(f'<text x="{x + w / 2}" y="{y + h + 12}" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" '
-                 f'font-weight="{800 if hi else 600}" fill="{"#F5C26B" if hi else SEAFOAM}">{lab}</text>')
+                 f'font-weight="{800 if hi else 600}" fill="{HIGHLIGHT_SOFT if hi else SEAFOAM}">{lab}</text>')
     walk = (f'<path d="M57 130 L 57 148" stroke="{CREAM}" stroke-width="2" stroke-dasharray="3 3" fill="none" opacity=".8"/>'
-            f'<circle cx="57" cy="139" r="6.5" fill="{NAVY}" stroke="#F5C26B" stroke-width="1.5"/>'
-            f'<path d="M54.2 136.2l5.6 5.6M59.8 136.2l-5.6 5.6" stroke="#F5C26B" stroke-width="1.5"/>')
+            f'<circle cx="57" cy="139" r="6.5" fill="{NAVY}" stroke="{HIGHLIGHT_SOFT}" stroke-width="1.5"/>'
+            f'<path d="M54.2 136.2l5.6 5.6M59.8 136.2l-5.6 5.6" stroke="{HIGHLIGHT_SOFT}" stroke-width="1.5"/>')
     return (f'<svg class="hero-art" {_A} viewBox="0 0 330 214" width="330" height="214">{"".join(g)}{walk}'
             f'<text x="108" y="210" font-family="Inter, sans-serif" font-size="8.5" fill="{SEAFOAM}" opacity=".85">walkway closed: Back Forty play fell</text></svg>')
 
@@ -81,8 +81,8 @@ def chip_stacks(spent: float, budget: float = 100000) -> str:
         if not count:
             chips.append(f'<ellipse cx="{x}" cy="92" rx="26" ry="8" fill="none" stroke="{NAVY}" stroke-dasharray="3 3" opacity=".4"/>')
         return ("".join(chips) + f'<text x="{x}" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="800" fill="{NAVY}">{label}</text>'
-                f'<text x="{x}" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A5568">{sub}</text>')
+                f'<text x="{x}" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="{MUTED}">{sub}</text>')
     return (f'<svg class="chips-art" {_A} viewBox="0 0 220 140" width="220" height="140">'
-            + stack(60, spent_chips, NAVY if spent <= budget else "#B42318", f"${spent:,.0f}", "spent")
+            + stack(60, spent_chips, NAVY if spent <= budget else DANGER, f"${spent:,.0f}", "spent")
             + stack(160, kept, SEAFOAM, f"${max(budget - spent, 0):,.0f}", "kept")
             + "</svg>")

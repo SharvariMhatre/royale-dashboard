@@ -2,7 +2,8 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
-import theme as T
+import theme  # noqa: F401  (puts app/ skins on the path)
+import skins.default as T  # the original Ocean Depths tokens; other skins are checked in tests/test_skins.py
 
 def lum(h):
     c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]

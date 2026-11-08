@@ -1,0 +1,2469 @@
+{
+ "Demand & Downtime": {
+  "alerts": [],
+  "captions": [
+   "Whole floor, all 7 zones (bank filter does not apply). Only complete Monday-Sunday weeks inside the range. Entries are door counts, not unique visitors; a missing counter reading is offline, not zero, and is excluded (see coverage).",
+   "source: team/p3_demand.parquet, script: Nikita's notebook (p3), scope: Full (Jan-Jun), floor-wide",
+   "Upper bound: hours down x the machine's own expected win per available hour; guests may play elsewhere. Scope: Full (Jan-Jun), bank All.",
+   "source: team/p1_downtime.parquet, team/p1_leak_clues.parquet, script: Aditi's notebook (p1), scope: Full (Jan-Jun), bank All",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [
+   "Weekly coin-in changed -1.6% from the first 4 to the last 4 complete weeks in this range",
+   "Downtime cost at most $90,663 of expected win (5,021 hours down, 0.38% of scheduled)"
+  ],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "Center Pit draws the most play: $72,180,407 wagered in this selection.",
+   "**Leak clues in this selection: 165 on 103 machines.** These are leads to inspect, not accusations.",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Coin-in, last 4 vs first 4 full weeks",
+    "-1.6%",
+    ""
+   ],
+   [
+    "Hours down",
+    "5,021",
+    ""
+   ],
+   [
+    "Expected win lost, upper bound",
+    "$90,663",
+    ""
+   ],
+   [
+    "Leak clues",
+    "165",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "Week starting",
+     "Money wagered",
+     "Door entries counted",
+     "Door counters online",
+     "Events that week"
+    ],
+    "data": [
+     [
+      "Jan 6",
+      "$9,480,631",
+      "107,413",
+      "100%",
+      "CES"
+     ],
+     [
+      "Jan 13",
+      "$9,646,775",
+      "102,389",
+      "100%",
+      ""
+     ],
+     [
+      "Jan 20",
+      "$9,296,561",
+      "100,743",
+      "100%",
+      ""
+     ],
+     [
+      "Jan 27",
+      "$9,375,485",
+      "101,434",
+      "100%",
+      ""
+     ],
+     [
+      "Feb 3",
+      "$10,518,087",
+      "113,431",
+      "100%",
+      "Super Bowl LIX weekend"
+     ],
+     [
+      "Feb 10",
+      "$9,288,320",
+      "100,770",
+      "100%",
+      ""
+     ],
+     [
+      "Feb 17",
+      "$10,326,530",
+      "112,217",
+      "100%",
+      "Gilded Ace Winter Slot Tournament"
+     ],
+     [
+      "Feb 24",
+      "$9,430,250",
+      "101,924",
+      "100%",
+      ""
+     ],
+     [
+      "Mar 3",
+      "$9,612,408",
+      "103,157",
+      "100%",
+      ""
+     ],
+     [
+      "Mar 10",
+      "$9,465,172",
+      "102,176",
+      "100%",
+      ""
+     ],
+     [
+      "Mar 17",
+      "$10,572,638",
+      "114,042",
+      "100%",
+      "College basketball tournament opening rounds"
+     ],
+     [
+      "Mar 24",
+      "$9,661,691",
+      "103,860",
+      "100%",
+      ""
+     ],
+     [
+      "Mar 31",
+      "$9,571,646",
+      "105,039",
+      "100%",
+      "CinemaCon; NAB Show"
+     ],
+     [
+      "Apr 7",
+      "$9,904,667",
+      "106,358",
+      "100%",
+      "NAB Show"
+     ],
+     [
+      "Apr 14",
+      "$9,886,259",
+      "103,120",
+      "100%",
+      ""
+     ],
+     [
+      "Apr 21",
+      "$9,658,773",
+      "102,588",
+      "100%",
+      ""
+     ],
+     [
+      "Apr 28",
+      "$9,478,809",
+      "101,046",
+      "100%",
+      ""
+     ],
+     [
+      "May 5",
+      "$9,127,246",
+      "95,602",
+      "98%",
+      ""
+     ],
+     [
+      "May 12",
+      "$10,202,514",
+      "106,270",
+      "100%",
+      "EDC Las Vegas festival weekend"
+     ],
+     [
+      "May 19",
+      "$9,612,572",
+      "101,591",
+      "100%",
+      ""
+     ],
+     [
+      "May 26",
+      "$9,425,894",
+      "99,646",
+      "100%",
+      ""
+     ],
+     [
+      "Jun 2",
+      "$9,186,382",
+      "97,897",
+      "100%",
+      ""
+     ],
+     [
+      "Jun 9",
+      "$9,820,264",
+      "105,728",
+      "100%",
+      "Gilded Ace Locals Appreciation Week"
+     ],
+     [
+      "Jun 16",
+      "$9,105,011",
+      "97,054",
+      "100%",
+      ""
+     ],
+     [
+      "Jun 23",
+      "$9,079,965",
+      "96,827",
+      "100%",
+      ""
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [],
+    "index": []
+   },
+   {
+    "columns": [
+     "Manufacturer",
+     "Hours down",
+     "Expected win lost"
+    ],
+    "data": [
+     [
+      "Halcyon",
+      "966",
+      "$17,819"
+     ],
+     [
+      "Northwind",
+      "1,299",
+      "$23,613"
+     ],
+     [
+      "Ridgeline",
+      "2,754",
+      "$49,232"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2
+    ]
+   },
+   {
+    "columns": [
+     "Cause",
+     "Machine-days affected",
+     "Expected win lost"
+    ],
+    "data": [
+     [
+      "Fault repair",
+      "1,340",
+      "$88,622"
+     ],
+     [
+      "Install",
+      "10",
+      "$1,569"
+     ],
+     [
+      "Move",
+      "4",
+      "$239"
+     ],
+     [
+      "Scheduled maintenance",
+      "6",
+      "$233"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "columns": [
+     "Rule that flagged it",
+     "Flags",
+     "Machines"
+    ],
+    "data": [
+     [
+      "Hold far from rtp period",
+      "1",
+      "1"
+     ],
+     [
+      "Outage over 12h",
+      "31",
+      "27"
+     ],
+     [
+      "Repeat fault within 72h",
+      "116",
+      "77"
+     ],
+     [
+      "Zero play while available",
+      "17",
+      "10"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P1-01",
+      "Machines were available 99.62% of scheduled hours. Downtime cost 5,021 machine-hours and about $90,663 of theo (0.39% of all theo).",
+      "5,021 h; $90,663 lost theo",
+      "Lost theo valued at each machine's own theo per available hour in that month (not floor average), so busy machines count more than quiet ones.",
+      "Upper bound: some players just move to another machine when one is down. Assumes an outage hour is an average hour.",
+      "high",
+      "p1_downtime",
+      "p1"
+     ],
+     [
+      "P1-02",
+      "Repair tickets explain 98.3% of downtime; every downtime hour matches an operations ticket (0 'unexplained' machine-days). 28% of fault downtime is waiting for a technician, not repairing.",
+      "1207 faults; avg wait 1.14 h, avg fix 2.95 h",
+      "Reconciled machine_day (scheduled - available seconds) against ticket intervals split at the 06:00 gaming-day boundary.",
+      "Ticket open time is when the machine became unavailable; faults nobody noticed would not appear.",
+      "high",
+      "p1_downtime_events",
+      "p1"
+     ],
+     [
+      "P1-03",
+      "Ridgeline machines fail most: 4.04 faults per 100 machine-days (95% CI 3.73-4.34) vs Northwind 1.67.",
+      "680 faults on 94 machines",
+      "Rates per machine-day on the floor, not raw counts, so a brand with more machines is not penalized.",
+      "Manufacturer overlaps with game title and age; this is association, not proof the brand causes faults.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-04",
+      "Downtime was worst in 2025-05 (1,009 machine-hours, avg wait 2.22 h vs 1.14 h overall) and the grave shift waits 1.96 h for a tech vs 0.90 h on day shift; repair time is the same on every shift.",
+      "grave 1.96 h, swing 0.85 h, day 0.90 h",
+      "Repair (fix) time compared by shift too: it barely changes, so the gap is staffing/response, not harder faults.",
+      "Shift assigned by ticket open time; long outages span shifts.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-05",
+      "Adding one technician (best case: grave shift) would recover about $513 of theo in the 30-day window (range $128-$769) for $11,520. Preventive maintenance: $-125 for $9,000. Downtime is real but too cheap to fix with this budget.",
+      "benefit < cost for both downtime actions",
+      "Tried each shift and the worst manufacturer; valued hours with the time-of-day profile of play.",
+      "Theo is expected win, not profit; ignores guest goodwill from fewer dead machines.",
+      "medium",
+      "p1_actions",
+      "p1"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [],
+   "radio": [
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ },
+ "Evidence": {
+  "alerts": [],
+  "captions": [
+   "source: team/all_claims.parquet, script: src/integrate_team.py (merge of p1/p2/p3_claims), scope: all questions",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [
+   "22 claims. Each lists the alternative explanation that was tested and its limitation."
+  ],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Claims",
+    "22",
+    ""
+   ],
+   [
+    "Questions covered",
+    "6",
+    ""
+   ],
+   [
+    "High confidence",
+    "16",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "ID",
+     "Question",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P1-01",
+      "Q3",
+      "Machines were available 99.62% of scheduled hours. Downtime cost 5,021 machine-hours and about $90,663 of theo (0.39% of all theo).",
+      "5,021 h; $90,663 lost theo",
+      "Lost theo valued at each machine's own theo per available hour in that month (not floor average), so busy machines count more than quiet ones.",
+      "Upper bound: some players just move to another machine when one is down. Assumes an outage hour is an average hour.",
+      "high",
+      "p1_downtime",
+      "p1"
+     ],
+     [
+      "P1-02",
+      "Q3",
+      "Repair tickets explain 98.3% of downtime; every downtime hour matches an operations ticket (0 'unexplained' machine-days). 28% of fault downtime is waiting for a technician, not repairing.",
+      "1207 faults; avg wait 1.14 h, avg fix 2.95 h",
+      "Reconciled machine_day (scheduled - available seconds) against ticket intervals split at the 06:00 gaming-day boundary.",
+      "Ticket open time is when the machine became unavailable; faults nobody noticed would not appear.",
+      "high",
+      "p1_downtime_events",
+      "p1"
+     ],
+     [
+      "P1-03",
+      "Q3",
+      "Ridgeline machines fail most: 4.04 faults per 100 machine-days (95% CI 3.73-4.34) vs Northwind 1.67.",
+      "680 faults on 94 machines",
+      "Rates per machine-day on the floor, not raw counts, so a brand with more machines is not penalized.",
+      "Manufacturer overlaps with game title and age; this is association, not proof the brand causes faults.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-04",
+      "Q3",
+      "Downtime was worst in 2025-05 (1,009 machine-hours, avg wait 2.22 h vs 1.14 h overall) and the grave shift waits 1.96 h for a tech vs 0.90 h on day shift; repair time is the same on every shift.",
+      "grave 1.96 h, swing 0.85 h, day 0.90 h",
+      "Repair (fix) time compared by shift too: it barely changes, so the gap is staffing/response, not harder faults.",
+      "Shift assigned by ticket open time; long outages span shifts.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-05",
+      "Q3",
+      "Adding one technician (best case: grave shift) would recover about $513 of theo in the 30-day window (range $128-$769) for $11,520. Preventive maintenance: $-125 for $9,000. Downtime is real but too cheap to fix with this budget.",
+      "benefit < cost for both downtime actions",
+      "Tried each shift and the worst manufacturer; valued hours with the time-of-day profile of play.",
+      "Theo is expected win, not profit; ignores guest goodwill from fewer dead machines.",
+      "medium",
+      "p1_actions",
+      "p1"
+     ],
+     [
+      "P1-06",
+      "Q5",
+      "The comp program cost $190,669 (Jan-Jun), already inside the $937,936 POS cost of goods; guests saw $682,750 of menu value.",
+      "$190,669 comp cost",
+      "player_period comp cost matches property_day comp cost to the cent; counted once.",
+      "Only carded play earns points; comp cost is house cost, not menu price.",
+      "high",
+      "p1_comps",
+      "p1"
+     ],
+     [
+      "P1-07",
+      "Q5",
+      "On 2025-05-01 the point price of comps was cut overnight: 13.1 -> 5.8 points per comp dollar (-56%). Comp cost per $1,000 carded theo rose from $11.95 to $13.09 (95% CI of change +0.65 to +1.67).",
+      "comp cost/day $1,027 -> $1,105; redemptions/day 322 -> 340",
+      "30 days either side only (less seasonality): cost per $1k theo change +0.55 (CI -0.06 to +1.16). Daily block bootstrap by week.",
+      "No control group: the change was floor-wide, so other May events can't be fully ruled out.",
+      "high",
+      "p1_comp_rate_daily",
+      "p1"
+     ],
+     [
+      "P1-08",
+      "Q5",
+      "Making comps cost fewer points did not bring more carded play: carded theo per day changed -1.6% (95% CI $-4,009 to $+1,288 per day).",
+      "$86,022 -> $84,629 carded theo/day",
+      "Checked the 30-day window around the change as well.",
+      "Two months after; long-run loyalty effects unknown. A randomized pilot would settle it.",
+      "medium",
+      "p1_comp_change",
+      "p1"
+     ],
+     [
+      "P1-09",
+      "Q5",
+      "Platinum comp cost per month went from $2,629 to $8,442 while Gold fell $17,203 -> $14,682: more players are reaching Platinum (tiers use lifetime points), so tier mix is a second driver of comp cost.",
+      "Base: $10,981 -> $10,586/month; Gold: $17,203 -> $14,682/month; Platinum: $2,629 -> $8,442/month",
+      "Split by tier at month end so the rate change and tier creep are not confused.",
+      "Tier is the tier after the player's last event that month.",
+      "medium",
+      "p1_comps",
+      "p1"
+     ],
+     [
+      "P1-10",
+      "Pipeline",
+      "All 55,092 on-floor machine-days passed 9 accounting rules (money adds up, no play while down, theo matches RTP, bets within limits...). 1018 off-floor days dropped; 153 offline counter-hours kept as unknown, not zero.",
+      "leak clues: {'zero_play_while_available': 17, 'outage_over_12h': 31, 'repeat_fault_within_72h': 116, 'hold_far_from_rtp_period': 1}",
+      "Rules run as Lakeflow expectations; failure counts visible in the pipeline data-quality tab.",
+      "Clean meters do not prove correct payout settings; that needs the luck test (P2) and inspection.",
+      "high",
+      "p1_leak_clues",
+      "p1"
+     ],
+     [
+      "P2-01",
+      "Q1",
+      "0 of the manager's bottom 10 are truly bad machines; replacing all 10 is not supported",
+      "Bad spot: 6; Short exposure: 3; Inspect: 1",
+      "Raw house-win ranking vs luck-, exposure- and location-adjusted ranking",
+      "Thresholds are judgment calls; see notebook rule table",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-02",
+      "Q1",
+      "9 of the bottom 10 sit in the Back Forty, the weakest zone",
+      "Back Forty earns 65% of the floor's theo/hour for the same games (Main Entrance: 119%)",
+      "Game mix: index compares each game with the same game floor-wide",
+      "Zone effect may reflect layout and walking distance, not one cause",
+      "High",
+      "p2_zone_index",
+      "p2"
+     ],
+     [
+      "P2-03",
+      "Q1",
+      "Location causes low earnings: machine M-1152 moved Back Forty -> Main Entrance and its theo/hour changed +106%",
+      "14.26 -> 29.35 $/h; floor-adjusted +106% over 147 days",
+      "Unmoved machines over the same dates changed -0.2%",
+      "Only 4 moves in the data; one machine is a small sample",
+      "Medium",
+      "p2_move_effects",
+      "p2"
+     ],
+     [
+      "P2-04",
+      "Q1",
+      "Downtime does not explain the bottom 10",
+      "Lowest availability on the floor is 98.1%; median 99.7%",
+      "Theo per available hour (removes downtime) gives the same bottom group",
+      "Availability is meter-based; short outages inside an hour may be missed",
+      "High",
+      "p2_machine_summary",
+      "p2"
+     ],
+     [
+      "P2-05",
+      "Q1",
+      "Inspection candidates: payout far outside game math beyond luck",
+      "M-1158 hold 3.0% vs 10.0%, z=-4.57",
+      "Exact per-spin variance from game_math; 10,000 fair simulations; |z|>3.29 so ~0.3 false alarms expected across all machines",
+      "A lead to inspect, not evidence of wrongdoing",
+      "High",
+      "p2_inspection_candidates",
+      "p2"
+     ],
+     [
+      "P2-06",
+      "Q1",
+      "Short time on the floor puts machines in the bottom 10 that should not be judged by totals",
+      "M-5076: 49 days; M-1120: 132 days; M-1118: 55 days",
+      "Per-available-hour comparison",
+      "New machines may still be ramping up",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-07",
+      "Q1",
+      "Simulation and closed-form luck scores agree",
+      "Max difference between simulated luck score and normal CDF of z: 0.012",
+      "Simple luck residual (house win - theo) ranks differently because it ignores game volatility",
+      "Normal approximation; fine at tens of thousands of spins per machine",
+      "High",
+      "p2_luck_scores",
+      "p2"
+     ],
+     [
+      "P2-08",
+      "Q1",
+      "Back Forty lost share while its Main Entrance walkway was closed",
+      "1 before closure: 67% of rest of floor; 2 during closure: 46% of rest of floor; 3 after closure: 64% of rest of floor",
+      "Compared with the rest of the floor over the same dates",
+      "Closure overlaps March seasonality",
+      "Medium",
+      "p2_b40_closure_effect",
+      "p2"
+     ],
+     [
+      "P2-09",
+      "Q1",
+      "M-1181 was also unlucky: only 0.9% of fair simulations did worse",
+      "House win $26,977 vs theo $32,516",
+      "Expected win (theo) per hour is normal for its game and zone",
+      "Testing 10 machines at 5% gives ~0.5 false positive expected",
+      "Medium",
+      "p2_luck_scores",
+      "p2"
+     ],
+     [
+      "P2-10",
+      "Q1",
+      "Slot L-38-5 holds 2 of the bottom 10 (M-5076, M-1120): the retired machine was already replaced in the same weak spot",
+      "Replacing machines without moving them repeats the problem",
+      "Same game title before and after; per-hour theo compared with zone peers",
+      "One slot",
+      "High",
+      "p2_verdicts / bronze_placements",
+      "p2"
+     ],
+     [
+      "P3-01",
+      "Model",
+      "The weekday_plus_events forecast beats the constant-mean baseline on the May-June holdout",
+      "MAE $50,920 vs baseline $218,258 (+76.7%)",
+      "Constant training-period mean (baseline); weekday-only vs weekday+events",
+      "Only 4 months of training data; one season",
+      "High",
+      "p3_model_metrics",
+      "p3"
+     ],
+     [
+      "P3-06",
+      "Q4",
+      "Carded player losses are highly concentrated",
+      "Top 1% of carded players = 27% of net loss; top 10% = 80%",
+      "Checked by tier and age band to see if one group drives it",
+      "Carded play only; uncarded players are not visible",
+      "High",
+      "p3_concentration",
+      "p3"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [
+    [
+     "Question",
+     [
+      "Model",
+      "Pipeline",
+      "Q1",
+      "Q3",
+      "Q4",
+      "Q5"
+     ]
+    ],
+    [
+     "From",
+     [
+      "p1",
+      "p2",
+      "p3"
+     ]
+    ]
+   ],
+   "radio": [
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ },
+ "Machine Details": {
+  "alerts": [],
+  "captions": [
+   "Luck: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%. Each row shows a symbol and a word, never colour alone.",
+   "Luck percentile comes from 10,000 fair replays per machine run in Databricks (Spark); this chart shows a 500-replay sample for a normal copy of this machine over the same 49 days it was on the floor. If the actual line sits far left of the bars, luck alone is a poor explanation.",
+   "Not moved. Only 4 machines moved in the period, so move evidence is thin.",
+   "Weekly casino win vs expected win (dollars per week), selected period",
+   "Verdict, reason and luck chance are for the full period (only scope precomputed). Downtime and the chart follow the period filter where noted.",
+   "source: team/p2_verdicts, p2_luck_sims, p2_move_effects, p1_downtime + min_machine_day.parquet, script: Bharath/Aditi notebooks + src/minimum.py, scope: Full (Jan-Jun) unless stated",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "&#8987; &#8987; &#8987; GM rank #1 &middot; Back Forty &middot; bank B-38 &middot; Royal Draw M-5076 Short exposure &nbsp; high confidence Only 49 days on the floor (installed 2025-05-13). Total win is low because of time, not performance.",
+   "Competing explanations tested (full period)",
+   "~ Luck 3.3% of fair replays over its 49 days on the floor did this badly or worse Unlikely &#10003; Short time on the floor 49 of 181 days Supported &#10003; Location its zone earns 65% of the floor rate for the same games Supported &#10005; The machine or its game earns 92% of same-game peers per available hour Not supported &#10005; Downtime 99.5% of scheduled time available Not supported",
+   "Only 3.3% of fair replays did as badly as M-5076&#x27;s actual result.",
+   "**Downtime:** 6 hours down in 6 months (0.51% of scheduled), expected win lost at most $42.",
+   "Over this selection the machine won $3,573 against $7,479 expected.",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Casino win (all 6 months)",
+    "$3,573",
+    ""
+   ],
+   [
+    "Expected win (theo)",
+    "$7,479",
+    ""
+   ],
+   [
+    "Days on floor",
+    "49",
+    ""
+   ],
+   [
+    "Luck percentile",
+    "3.3%",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "Cause",
+     "Days affected",
+     "Expected win lost"
+    ],
+    "data": [
+     [
+      "install",
+      "1",
+      "$42"
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P2-06",
+      "Short time on the floor puts machines in the bottom 10 that should not be judged by totals",
+      "M-5076: 49 days; M-1120: 132 days; M-1118: 55 days",
+      "Per-available-hour comparison",
+      "New machines may still be ramping up",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-10",
+      "Slot L-38-5 holds 2 of the bottom 10 (M-5076, M-1120): the retired machine was already replaced in the same weak spot",
+      "Replacing machines without moving them repeats the problem",
+      "Same game title before and after; per-hour theo compared with zone peers",
+      "One slot",
+      "High",
+      "p2_verdicts / bronze_placements",
+      "p2"
+     ],
+     [
+      "P1-01",
+      "Machines were available 99.62% of scheduled hours. Downtime cost 5,021 machine-hours and about $90,663 of theo (0.39% of all theo).",
+      "5,021 h; $90,663 lost theo",
+      "Lost theo valued at each machine's own theo per available hour in that month (not floor average), so busy machines count more than quiet ones.",
+      "Upper bound: some players just move to another machine when one is down. Assumes an outage hour is an average hour.",
+      "high",
+      "p1_downtime",
+      "p1"
+     ],
+     [
+      "P1-02",
+      "Repair tickets explain 98.3% of downtime; every downtime hour matches an operations ticket (0 'unexplained' machine-days). 28% of fault downtime is waiting for a technician, not repairing.",
+      "1207 faults; avg wait 1.14 h, avg fix 2.95 h",
+      "Reconciled machine_day (scheduled - available seconds) against ticket intervals split at the 06:00 gaming-day boundary.",
+      "Ticket open time is when the machine became unavailable; faults nobody noticed would not appear.",
+      "high",
+      "p1_downtime_events",
+      "p1"
+     ],
+     [
+      "P1-03",
+      "Ridgeline machines fail most: 4.04 faults per 100 machine-days (95% CI 3.73-4.34) vs Northwind 1.67.",
+      "680 faults on 94 machines",
+      "Rates per machine-day on the floor, not raw counts, so a brand with more machines is not penalized.",
+      "Manufacturer overlaps with game title and age; this is association, not proof the brand causes faults.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-04",
+      "Downtime was worst in 2025-05 (1,009 machine-hours, avg wait 2.22 h vs 1.14 h overall) and the grave shift waits 1.96 h for a tech vs 0.90 h on day shift; repair time is the same on every shift.",
+      "grave 1.96 h, swing 0.85 h, day 0.90 h",
+      "Repair (fix) time compared by shift too: it barely changes, so the gap is staffing/response, not harder faults.",
+      "Shift assigned by ticket open time; long outages span shifts.",
+      "high",
+      "p1_downtime_summary",
+      "p1"
+     ],
+     [
+      "P1-05",
+      "Adding one technician (best case: grave shift) would recover about $513 of theo in the 30-day window (range $128-$769) for $11,520. Preventive maintenance: $-125 for $9,000. Downtime is real but too cheap to fix with this budget.",
+      "benefit < cost for both downtime actions",
+      "Tried each shift and the worst manufacturer; valued hours with the time-of-day profile of play.",
+      "Theo is expected win, not profit; ignores guest goodwill from fewer dead machines.",
+      "medium",
+      "p1_actions",
+      "p1"
+     ],
+     [
+      "P2-01",
+      "0 of the manager's bottom 10 are truly bad machines; replacing all 10 is not supported",
+      "Bad spot: 6; Short exposure: 3; Inspect: 1",
+      "Raw house-win ranking vs luck-, exposure- and location-adjusted ranking",
+      "Thresholds are judgment calls; see notebook rule table",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-02",
+      "9 of the bottom 10 sit in the Back Forty, the weakest zone",
+      "Back Forty earns 65% of the floor's theo/hour for the same games (Main Entrance: 119%)",
+      "Game mix: index compares each game with the same game floor-wide",
+      "Zone effect may reflect layout and walking distance, not one cause",
+      "High",
+      "p2_zone_index",
+      "p2"
+     ],
+     [
+      "P2-03",
+      "Location causes low earnings: machine M-1152 moved Back Forty -> Main Entrance and its theo/hour changed +106%",
+      "14.26 -> 29.35 $/h; floor-adjusted +106% over 147 days",
+      "Unmoved machines over the same dates changed -0.2%",
+      "Only 4 moves in the data; one machine is a small sample",
+      "Medium",
+      "p2_move_effects",
+      "p2"
+     ],
+     [
+      "P2-04",
+      "Downtime does not explain the bottom 10",
+      "Lowest availability on the floor is 98.1%; median 99.7%",
+      "Theo per available hour (removes downtime) gives the same bottom group",
+      "Availability is meter-based; short outages inside an hour may be missed",
+      "High",
+      "p2_machine_summary",
+      "p2"
+     ],
+     [
+      "P2-05",
+      "Inspection candidates: payout far outside game math beyond luck",
+      "M-1158 hold 3.0% vs 10.0%, z=-4.57",
+      "Exact per-spin variance from game_math; 10,000 fair simulations; |z|>3.29 so ~0.3 false alarms expected across all machines",
+      "A lead to inspect, not evidence of wrongdoing",
+      "High",
+      "p2_inspection_candidates",
+      "p2"
+     ],
+     [
+      "P2-07",
+      "Simulation and closed-form luck scores agree",
+      "Max difference between simulated luck score and normal CDF of z: 0.012",
+      "Simple luck residual (house win - theo) ranks differently because it ignores game volatility",
+      "Normal approximation; fine at tens of thousands of spins per machine",
+      "High",
+      "p2_luck_scores",
+      "p2"
+     ],
+     [
+      "P2-08",
+      "Back Forty lost share while its Main Entrance walkway was closed",
+      "1 before closure: 67% of rest of floor; 2 during closure: 46% of rest of floor; 3 after closure: 64% of rest of floor",
+      "Compared with the rest of the floor over the same dates",
+      "Closure overlaps March seasonality",
+      "Medium",
+      "p2_b40_closure_effect",
+      "p2"
+     ],
+     [
+      "P2-09",
+      "M-1181 was also unlucky: only 0.9% of fair simulations did worse",
+      "House win $26,977 vs theo $32,516",
+      "Expected win (theo) per hour is normal for its game and zone",
+      "Testing 10 machines at 5% gives ~0.5 false positive expected",
+      "Medium",
+      "p2_luck_scores",
+      "p2"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [],
+   "radio": [
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Machine (the GM's 10 first)",
+     "M-5076"
+    ],
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ },
+ "Model Test & $100K Plan": {
+  "alerts": [],
+  "captions": [
+   "Train 2025-01-01..2025-04-30, test 2025-05-01..2025-06-30 (61 days), split by time; models frozen before testing; no later-published data used. Fixed dates, unaffected by the sidebar filters. The forecast file's own predictions reproduce $50,920 (model: weekday plus events) and $218,258 (baseline).",
+   "Independent check: my minimum weekday-average model gives $68,699, matching the team's weekday_average row. Leak check: its weekday means use 120 Jan-Apr days; 0 May-Jun days enter training.",
+   "source: team/p3_forecast_results.parquet, team/p3_model_metrics.parquet, script: Nikita's notebook (p3), scope: test May-Jun 2025, floor daily coin-in $",
+   "Lease example: $2,500 + 16 days x $55 = $3,380 per machine. Build a plan on the Overview page. Estimates come from the teams' action files.",
+   "source: min_q6.parquet, script: src/minimum.py, scope: 30 days from 2025-07-01",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [
+   "Weekday plus events misses by $50,920 a day on May-June, against $218,258 for the constant baseline",
+   "Action catalogue with budget cost (guide formula)"
+  ],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Model average miss per day",
+    "$50,920",
+    ""
+   ],
+   [
+    "Constant baseline miss per day",
+    "$218,258",
+    ""
+   ],
+   [
+    "Improvement over baseline",
+    "77%",
+    ""
+   ],
+   [
+    "Test days (May to Jun)",
+    "61",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "Model",
+     "Average miss per day (MAE)",
+     "MLflow run ID"
+    ],
+    "data": [
+     [
+      "Weekday plus events",
+      "$50,920",
+      "de12ff08ee6541ceb244fbc93d714f14"
+     ],
+     [
+      "Weekday average",
+      "$68,699",
+      "cce1d5d0fdfd41d2bfda4578d8955a6f"
+     ],
+     [
+      "Baseline constant mean",
+      "$218,258",
+      "56707b90404d4a238cee358054a56941"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P1-10",
+      "All 55,092 on-floor machine-days passed 9 accounting rules (money adds up, no play while down, theo matches RTP, bets within limits...). 1018 off-floor days dropped; 153 offline counter-hours kept as unknown, not zero.",
+      "leak clues: {'zero_play_while_available': 17, 'outage_over_12h': 31, 'repeat_fault_within_72h': 116, 'hold_far_from_rtp_period': 1}",
+      "Rules run as Lakeflow expectations; failure counts visible in the pipeline data-quality tab.",
+      "Clean meters do not prove correct payout settings; that needs the luck test (P2) and inspection.",
+      "high",
+      "p1_leak_clues",
+      "p1"
+     ],
+     [
+      "P3-01",
+      "The weekday_plus_events forecast beats the constant-mean baseline on the May-June holdout",
+      "MAE $50,920 vs baseline $218,258 (+76.7%)",
+      "Constant training-period mean (baseline); weekday-only vs weekday+events",
+      "Only 4 months of training data; one season",
+      "High",
+      "p3_model_metrics",
+      "p3"
+     ]
+    ],
+    "index": [
+     0,
+     1
+    ]
+   },
+   {
+    "columns": [
+     "Action",
+     "Priced per",
+     "Most allowed",
+     "Days to start",
+     "Days running in 30",
+     "Cost per unit",
+     "Cost at the limit",
+     "Cannot combine with others in group"
+    ],
+    "data": [
+     [
+      "Relocate one machine",
+      "machine",
+      "24",
+      "2",
+      "28",
+      "$1,800",
+      "$43,200",
+      "same_machine"
+     ],
+     [
+      "Relocate a whole bank",
+      "bank",
+      "3",
+      "5",
+      "25",
+      "$9,500",
+      "$28,500",
+      "same_machine"
+     ],
+     [
+      "Replace a machine with a leased new title",
+      "machine",
+      "20",
+      "14",
+      "16",
+      "$3,380",
+      "$67,600",
+      "same_machine"
+     ],
+     [
+      "Replace a machine with a purchased new title",
+      "machine",
+      "10",
+      "21",
+      "9",
+      "$22,000",
+      "$220,000",
+      "same_machine"
+     ],
+     [
+      "Add one technician to a shift for 30 days",
+      "technician_shift",
+      "3",
+      "7",
+      "23",
+      "$11,520",
+      "$34,560",
+      ""
+     ],
+     [
+      "Preventive maintenance sweep for one manufacturer",
+      "manufacturer",
+      "3",
+      "7",
+      "23",
+      "$9,000",
+      "$27,000",
+      ""
+     ],
+     [
+      "Machine inspection and paytable verification",
+      "machine",
+      "15",
+      "1",
+      "29",
+      "$1,200",
+      "$18,000",
+      ""
+     ],
+     [
+      "Wayfinding and signage refresh for a zone",
+      "zone",
+      "2",
+      "10",
+      "20",
+      "$7,500",
+      "$15,000",
+      ""
+     ],
+     [
+      "Comp policy pilot with control group",
+      "pilot",
+      "1",
+      "5",
+      "25",
+      "$4,000",
+      "$4,000",
+      "comp_policy"
+     ],
+     [
+      "Change comp redemption rate floor-wide",
+      "policy",
+      "1",
+      "3",
+      "27",
+      "$1,500",
+      "$1,500",
+      "comp_policy"
+     ],
+     [
+      "Property promotion weekend",
+      "event",
+      "2",
+      "14",
+      "16",
+      "$15,000",
+      "$30,000",
+      ""
+     ],
+     [
+      "Expanded guest intercept survey",
+      "month",
+      "1",
+      "7",
+      "23",
+      "$3,500",
+      "$3,500",
+      ""
+     ],
+     [
+      "Preserve budget",
+      "none",
+      "1",
+      "0",
+      "30",
+      "$0",
+      "$0",
+      ""
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [],
+   "radio": [
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ },
+ "Overview": {
+  "alerts": [
+   "Assumption beyond the guide's 30-day window, not part of the scored plan: a moved machine, new signs or an inspection keeps its 30-day benefit every month at the same size (no decay, no extra cost). Real benefits may fade or never repeat.",
+   "Keep the money: $100,000 remaining, no action slot used."
+  ],
+  "captions": [
+   "Luck pct = luck percentile: share of 10,000 fair replays per machine (run in Databricks, Spark) that did worse than reality; under 5% means unusually bad luck. Verdicts are for the full period (Jan-Jun).",
+   "Luck as the explanation: Supported at 20% or more, Unlikely at 1-20%, Not supported below 1%.",
+   "source: team/p2_verdicts.parquet + min_machine_day.parquet, script: Bharath's notebook (p2) + src/minimum.py, scope: verdicts: Full (Jan-Jun); money columns: Full (Jan-Jun)",
+   "Positions from the floor plan (floor_locations x/y; current spot for each machine). Hover a machine for its numbers. source: team/p2_verdicts.parquet; script: Bharath's notebook (p2).",
+   "Verdict counts follow the bank filter; the period filter does not apply (full-period verdicts).",
+   "Dashed line = the floor rate. Bar labels carry the value; the lowest zone is also named in the takeaway.",
+   "Expected win per available hour in Back Forty divided by the rest of the floor, before / during / after the closure (100% = same as the rest). A dip while access was cut points to location.",
+   "source: team/p2_zone_index.parquet, team/p2_b40_closure_effect.parquet, script: Bharath's notebook (p2), scope: Full period; closure split as published by the team",
+   "Benefit and range are sums of the team's 30-day estimates (the range assumes every line lands low or high together). Costs are recomputed with the guide formula and match the team's file.",
+   "Observed moves so far (only 4 machines moved, so this is thin evidence):",
+   "source: team/final_budget_plan.parquet, script: team decision + src/budget.py checks, scope: 30 days from 2025-07-01",
+   "Options come from the team's action files, with their own benefit ranges. Ranges are the teams' estimates, not guarantees.",
+   "source: team/p1_actions, p2_actions, p3_actions + min_q6.parquet, script: teams' notebooks + src/budget.py, scope: 30 days from 2025-07-01",
+   "30 days from July 1. Up to 3 action types. Cost per action = quantity x (unit cost + daily cost x max(0, 30 - lead days)). Benefits are NOT estimated in the minimum version; keeping money is a valid answer.",
+   "source: min_q6.parquet, script: src/minimum.py, scope: catalogue prices; 30 days from 2025-07-01",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "Hotel Corridor High-Limit Main Entrance Center Pit Bar Row Back Forty Garage walkway closed: Back Forty play fell Answer in brief Don&#x27;t replace the 10. Fix the spot. 0 of the GM&#x27;s 10 are truly bad machines: 6 bad spot, 3 short exposure, 1 inspect. 9 of the 10 sit in Back Forty , which earns 65% of the floor rate for the same games. Downtime explains little (0.38% of scheduled hours). 0 of 10 truly bad machines on the GM&#x27;s list 9 of 10 sit in Back Forty 65% Back Forty rate vs floor, same games 0.38% of scheduled hours lost to downtime",
+   "01 The GM&#x27;s 10, re-examined The 10 lowest machines by total casino win, Jan 1 to Jun 30, 2025. A low total can come from luck, location or a leak; each card shows the team&#x27;s verdict after testing all three. Click a card to open its case file.",
+   "GM #1 Short exposure M-5076 Back Forty Only 49 days on the floor (installed 2025-05-13). Total win is low because of time, not performance. Luck pct 3.3% Days 49 Open case file &rarr; GM #2 Inspect M-1158 Back Forty Hold 3.0% vs 10.0% expected; z = -4.57 is beyond luck. Verify paytable. Luck pct 0.0% Days 181 Open case file &rarr; GM #3 Short exposure M-1120 Back Forty Only 132 days on the floor (retired 2025-05-13). Total win is low because of time, not performance. Luck pct 21.9% Days 132 Open case file &rarr; GM #4 Short exposure M-1118 High-Limit Room Only 55 days on the floor (retired 2025-02-25). Total win is low because of time, not performance. Luck pct 26.0% Days 55 Open case file &rarr; GM #5 Bad spot M-1238 Back Forty Normal for its game in the Back Forty (114% of peers), but the zone earns 65% of the floor. Luck pct 3.8% Days 181 Open case file &rarr; GM #6 Bad spot M-1181 Back Forty Normal for its game in the Back Forty (94% of peers), but the zone earns 65% of the floor. Luck pct 0.9% Days 181 Open case file &rarr; GM #7 Bad spot M-1035 Back Forty Normal for its game in the Back Forty (104% of peers), but the zone earns 65% of the floor. Luck pct 44.1% Days 181 Open case file &rarr; GM #8 Bad spot M-1179 Back Forty Normal for its game in the Back Forty (99% of peers), but the zone earns 65% of the floor. Luck pct 7.4% Days 181 Open case file &rarr; GM #9 Bad spot M-1017 Back Forty Normal for its game in the Back Forty (98% of peers), but the zone earns 65% of the floor. Luck pct 71.9% Days 181 Open case file &rarr; GM #10 Bad spot M-1265 Back Forty Normal for its game in the Back Forty (93% of peers), but the zone earns 65% of the floor. Luck pct 47.5% Days 181 Open case file &rarr;",
+   "Same slot counted twice. M-1120 was retired on 2025-05-13 and M-5076 was installed that day in the same slot (L-38-5). Both are on the GM&#x27;s list: the casino already replaced one machine there, and the replacement landed on the list too. Replacing doesn&#x27;t fix a bad spot.",
+   "- **Bad spot**: Normal for its game, but its zone earns much less than other zones. The location is the problem.",
+   "- **Short exposure**: Few days on the floor (installed or retired during the period), so its total is low for that reason alone.",
+   "- **Inspect**: Its payout is far from the game's math beyond what luck explains. A lead to verify the machine, not an accusation.",
+   "- **Unlucky**: Normal play for its game; the win came in below expectation by chance.",
+   "- **Healthy**: Earning in line with its peers.",
+   "- **Broken**: Unavailable too much of the time.",
+   "- **Truly bad**: Earns well below identical games even after accounting for luck, exposure and location.",
+   "02 The floor map: where the problem sits All 310 machines at their floor positions. Shape and colour show the verdict; ringed machines are the GM&#x27;s 10; the dashed box is Back Forty.",
+   "Click any machine on the map to see its verdict here; double-click to clear. Use the zone buttons to zoom in.",
+   "194 of 310 machines are Healthy and 45 are Bad spot; none are Truly bad or Broken.",
+   "03 Why the zone, not the machines Two independent checks: the same games earn less in Back Forty, and Back Forty&#x27;s share of play fell while its walkway was closed, then recovered.",
+   "Back Forty earns 65% of the floor rate for the same games, the lowest of 7 zones.",
+   "Back Forty earned 67% of the rest of the floor before the walkway closure, 46% during it and 64% after.",
+   "04 The team&#x27;s plan What we would fund with the $100,000 over 30 days from July 1: up to 3 action types, each with its cost, benefit range, how we would know it worked and the evidence behind it. Keeping money is a valid answer.",
+   "$14,100 spent $85,900 kept $14,100 of $100,000 spent $85,900 kept &middot; 3 of 3 action types used Keeping money is allowed and uses no action slot. Each chip = $10,000.",
+   "**Machine inspection and paytable verification**",
+   "**Targets:** M-1158",
+   "**How we would know it worked:** Compare July hold with the configured 90% RTP; a luck z-score back inside +/-2 means the payout is normal. If the paytable is wrong, fix it and re-check after 30 days.",
+   "**Wayfinding and signage refresh for a zone**",
+   "**Targets:** Back Forty (Z-B40)",
+   "Assumption. signs lift Back Forty play 2% (0-5%), far less than the 21-point drop seen when its walkway closed.",
+   "**How we would know it worked:** Back Forty expected win per available hour and door entries, 20 live days after install vs the 30 days before; other zones are the comparison.",
+   "**Relocate one machine** x3",
+   "**Targets:** M-1181, M-1017, M-1265 **Controls (left in place):** M-1179, M-1035, M-1238",
+   "**How we would know it worked:** Matched experiment: each moved machine has a same-game partner left in Back Forty. Compare expected win per available hour, July vs Jan-Jun, moved vs control (difference-in-differences). 30 days is short, so keep measuring into August before scaling to the rest of Back Forty.",
+   "**Payback after 30 days (sensitivity)**",
+   "05 Try your own plan Pick up to 3 action types from the teams&#x27; proposals. Costs are recomputed with the guide formula; the meter enforces the budget.",
+   "$0 spent $100,000 kept $0 of $100,000 spent $100,000 kept &middot; 0 of 3 action types used Keeping money is allowed and uses no action slot. Each chip = $10,000.",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Spent",
+    "$14,100",
+    ""
+   ],
+   [
+    "Kept",
+    "$85,900",
+    ""
+   ],
+   [
+    "Expected benefit, 30 days",
+    "$12,537",
+    ""
+   ],
+   [
+    "Benefit range",
+    "$0 to $27,874",
+    ""
+   ],
+   [
+    "Cost",
+    "$1,200",
+    ""
+   ],
+   [
+    "Expected benefit",
+    "$2,897",
+    ""
+   ],
+   [
+    "Range",
+    "$0 to $5,794",
+    ""
+   ],
+   [
+    "Confidence",
+    "Medium",
+    ""
+   ],
+   [
+    "Cost",
+    "$7,500",
+    ""
+   ],
+   [
+    "Expected benefit",
+    "$5,300",
+    ""
+   ],
+   [
+    "Range",
+    "$0 to $13,400",
+    ""
+   ],
+   [
+    "Confidence",
+    "Low",
+    ""
+   ],
+   [
+    "Cost",
+    "$5,400",
+    ""
+   ],
+   [
+    "Expected benefit",
+    "$4,340",
+    ""
+   ],
+   [
+    "Range",
+    "$0 to $8,680",
+    ""
+   ],
+   [
+    "Confidence",
+    "Low",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "GM rank",
+     "Machine",
+     "Zone",
+     "Days on floor (all 6 months)",
+     "Casino win, selected period",
+     "Time available, selected period",
+     "Verdict (full period)",
+     "Luck percentile",
+     "Luck as the explanation",
+     "Why",
+     "Confidence"
+    ],
+    "data": [
+     [
+      "1",
+      "M-5076",
+      "Back Forty",
+      "49",
+      "$3,573",
+      "99%",
+      "Short exposure",
+      "3.3%",
+      "Unlikely",
+      "Only 49 days on the floor (installed 2025-05-13). Total win is low because of time, not performance.",
+      "High"
+     ],
+     [
+      "2",
+      "M-1158",
+      "Back Forty",
+      "181",
+      "$15,796",
+      "100%",
+      "Inspect",
+      "0.0%",
+      "Not supported",
+      "Hold 3.0% vs 10.0% expected; z = -4.57 is beyond luck. Verify paytable.",
+      "High"
+     ],
+     [
+      "3",
+      "M-1120",
+      "Back Forty",
+      "132",
+      "$16,355",
+      "99%",
+      "Short exposure",
+      "21.9%",
+      "Supported",
+      "Only 132 days on the floor (retired 2025-05-13). Total win is low because of time, not performance.",
+      "High"
+     ],
+     [
+      "4",
+      "M-1118",
+      "High-Limit Room",
+      "55",
+      "$20,050",
+      "100%",
+      "Short exposure",
+      "26.0%",
+      "Supported",
+      "Only 55 days on the floor (retired 2025-02-25). Total win is low because of time, not performance.",
+      "High"
+     ],
+     [
+      "5",
+      "M-1238",
+      "Back Forty",
+      "181",
+      "$24,933",
+      "100%",
+      "Bad spot",
+      "3.8%",
+      "Unlikely",
+      "Normal for its game in the Back Forty (114% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ],
+     [
+      "6",
+      "M-1181",
+      "Back Forty",
+      "181",
+      "$26,977",
+      "100%",
+      "Bad spot",
+      "0.9%",
+      "Not supported",
+      "Normal for its game in the Back Forty (94% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ],
+     [
+      "7",
+      "M-1035",
+      "Back Forty",
+      "181",
+      "$30,304",
+      "100%",
+      "Bad spot",
+      "44.1%",
+      "Supported",
+      "Normal for its game in the Back Forty (104% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ],
+     [
+      "8",
+      "M-1179",
+      "Back Forty",
+      "181",
+      "$30,394",
+      "100%",
+      "Bad spot",
+      "7.4%",
+      "Unlikely",
+      "Normal for its game in the Back Forty (99% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ],
+     [
+      "9",
+      "M-1017",
+      "Back Forty",
+      "181",
+      "$31,940",
+      "100%",
+      "Bad spot",
+      "71.9%",
+      "Supported",
+      "Normal for its game in the Back Forty (98% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ],
+     [
+      "10",
+      "M-1265",
+      "Back Forty",
+      "181",
+      "$32,071",
+      "100%",
+      "Bad spot",
+      "47.5%",
+      "Supported",
+      "Normal for its game in the Back Forty (93% of peers), but the zone earns 65% of the floor.",
+      "High"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "columns": [
+     "Zone",
+     "Machines",
+     "Earnings vs floor",
+     "Expected win per hour",
+     "Seats used"
+    ],
+    "data": [
+     [
+      "Back Forty",
+      "48",
+      "65%",
+      "$12",
+      "25%"
+     ],
+     [
+      "Garage Entrance",
+      "36",
+      "95%",
+      "$17",
+      "40%"
+     ],
+     [
+      "High-Limit Room",
+      "25",
+      "99%",
+      "$17",
+      "6%"
+     ],
+     [
+      "Hotel Corridor",
+      "36",
+      "101%",
+      "$18",
+      "37%"
+     ],
+     [
+      "Bar Row",
+      "49",
+      "102%",
+      "$18",
+      "40%"
+     ],
+     [
+      "Center Pit",
+      "79",
+      "113%",
+      "$21",
+      "46%"
+     ],
+     [
+      "Main Entrance",
+      "37",
+      "119%",
+      "$21",
+      "44%"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ]
+   },
+   {
+    "columns": [
+     "Period",
+     "Back Forty expected win per hour",
+     "Rest of floor",
+     "Back Forty vs rest"
+    ],
+    "data": [
+     [
+      "1 before closure",
+      "$13",
+      "$19",
+      "67%"
+     ],
+     [
+      "2 during closure",
+      "$9",
+      "$20",
+      "46%"
+     ],
+     [
+      "3 after closure",
+      "$12",
+      "$18",
+      "64%"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P2-01",
+      "0 of the manager's bottom 10 are truly bad machines; replacing all 10 is not supported",
+      "Bad spot: 6; Short exposure: 3; Inspect: 1",
+      "Raw house-win ranking vs luck-, exposure- and location-adjusted ranking",
+      "Thresholds are judgment calls; see notebook rule table",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-02",
+      "9 of the bottom 10 sit in the Back Forty, the weakest zone",
+      "Back Forty earns 65% of the floor's theo/hour for the same games (Main Entrance: 119%)",
+      "Game mix: index compares each game with the same game floor-wide",
+      "Zone effect may reflect layout and walking distance, not one cause",
+      "High",
+      "p2_zone_index",
+      "p2"
+     ],
+     [
+      "P2-03",
+      "Location causes low earnings: machine M-1152 moved Back Forty -> Main Entrance and its theo/hour changed +106%",
+      "14.26 -> 29.35 $/h; floor-adjusted +106% over 147 days",
+      "Unmoved machines over the same dates changed -0.2%",
+      "Only 4 moves in the data; one machine is a small sample",
+      "Medium",
+      "p2_move_effects",
+      "p2"
+     ],
+     [
+      "P2-04",
+      "Downtime does not explain the bottom 10",
+      "Lowest availability on the floor is 98.1%; median 99.7%",
+      "Theo per available hour (removes downtime) gives the same bottom group",
+      "Availability is meter-based; short outages inside an hour may be missed",
+      "High",
+      "p2_machine_summary",
+      "p2"
+     ],
+     [
+      "P2-05",
+      "Inspection candidates: payout far outside game math beyond luck",
+      "M-1158 hold 3.0% vs 10.0%, z=-4.57",
+      "Exact per-spin variance from game_math; 10,000 fair simulations; |z|>3.29 so ~0.3 false alarms expected across all machines",
+      "A lead to inspect, not evidence of wrongdoing",
+      "High",
+      "p2_inspection_candidates",
+      "p2"
+     ],
+     [
+      "P2-06",
+      "Short time on the floor puts machines in the bottom 10 that should not be judged by totals",
+      "M-5076: 49 days; M-1120: 132 days; M-1118: 55 days",
+      "Per-available-hour comparison",
+      "New machines may still be ramping up",
+      "High",
+      "p2_verdicts",
+      "p2"
+     ],
+     [
+      "P2-07",
+      "Simulation and closed-form luck scores agree",
+      "Max difference between simulated luck score and normal CDF of z: 0.012",
+      "Simple luck residual (house win - theo) ranks differently because it ignores game volatility",
+      "Normal approximation; fine at tens of thousands of spins per machine",
+      "High",
+      "p2_luck_scores",
+      "p2"
+     ],
+     [
+      "P2-08",
+      "Back Forty lost share while its Main Entrance walkway was closed",
+      "1 before closure: 67% of rest of floor; 2 during closure: 46% of rest of floor; 3 after closure: 64% of rest of floor",
+      "Compared with the rest of the floor over the same dates",
+      "Closure overlaps March seasonality",
+      "Medium",
+      "p2_b40_closure_effect",
+      "p2"
+     ],
+     [
+      "P2-09",
+      "M-1181 was also unlucky: only 0.9% of fair simulations did worse",
+      "House win $26,977 vs theo $32,516",
+      "Expected win (theo) per hour is normal for its game and zone",
+      "Testing 10 machines at 5% gives ~0.5 false positive expected",
+      "Medium",
+      "p2_luck_scores",
+      "p2"
+     ],
+     [
+      "P2-10",
+      "Slot L-38-5 holds 2 of the bottom 10 (M-5076, M-1120): the retired machine was already replaced in the same weak spot",
+      "Replacing machines without moving them repeats the problem",
+      "Same game title before and after; per-hour theo compared with zone peers",
+      "One slot",
+      "High",
+      "p2_verdicts / bronze_placements",
+      "p2"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ]
+   },
+   {
+    "columns": [
+     "Machine",
+     "Zone",
+     "Verdict",
+     "Luck percentile",
+     "Why"
+    ],
+    "data": [
+     [
+      "M-1158",
+      "Back Forty",
+      "Inspect",
+      "0.0%",
+      "Hold 3.0% vs 10.0% expected; z = -4.57 is beyond luck. Verify paytable."
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P2-05",
+      "Inspection candidates: payout far outside game math beyond luck",
+      "M-1158 hold 3.0% vs 10.0%, z=-4.57",
+      "Exact per-spin variance from game_math; 10,000 fair simulations; |z|>3.29 so ~0.3 false alarms expected across all machines",
+      "A lead to inspect, not evidence of wrongdoing",
+      "High",
+      "p2_inspection_candidates",
+      "p2"
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P2-08",
+      "Back Forty lost share while its Main Entrance walkway was closed",
+      "1 before closure: 67% of rest of floor; 2 during closure: 46% of rest of floor; 3 after closure: 64% of rest of floor",
+      "Compared with the rest of the floor over the same dates",
+      "Closure overlaps March seasonality",
+      "Medium",
+      "p2_b40_closure_effect",
+      "p2"
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "Machine",
+     "Zone",
+     "Verdict",
+     "Luck percentile",
+     "Why"
+    ],
+    "data": [
+     [
+      "M-1179",
+      "Back Forty",
+      "Bad spot",
+      "7.4%",
+      "Normal for its game in the Back Forty (99% of peers), but the zone earns 65% of the floor."
+     ],
+     [
+      "M-1265",
+      "Back Forty",
+      "Bad spot",
+      "47.5%",
+      "Normal for its game in the Back Forty (93% of peers), but the zone earns 65% of the floor."
+     ],
+     [
+      "M-1181",
+      "Back Forty",
+      "Bad spot",
+      "0.9%",
+      "Normal for its game in the Back Forty (94% of peers), but the zone earns 65% of the floor."
+     ],
+     [
+      "M-1035",
+      "Back Forty",
+      "Bad spot",
+      "44.1%",
+      "Normal for its game in the Back Forty (104% of peers), but the zone earns 65% of the floor."
+     ],
+     [
+      "M-1017",
+      "Back Forty",
+      "Bad spot",
+      "71.9%",
+      "Normal for its game in the Back Forty (98% of peers), but the zone earns 65% of the floor."
+     ],
+     [
+      "M-1238",
+      "Back Forty",
+      "Bad spot",
+      "3.8%",
+      "Normal for its game in the Back Forty (114% of peers), but the zone earns 65% of the floor."
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   {
+    "columns": [
+     "Machine",
+     "From",
+     "To",
+     "Days observed",
+     "Change vs unmoved floor"
+    ],
+    "data": [
+     [
+      "M-1152",
+      "Back Forty",
+      "Main Entrance",
+      "147",
+      "106%"
+     ],
+     [
+      "M-1113",
+      "Center Pit",
+      "Center Pit",
+      "133",
+      "6%"
+     ],
+     [
+      "M-1126",
+      "Hotel Corridor",
+      "Bar Row",
+      "56",
+      "3%"
+     ],
+     [
+      "M-1299",
+      "Center Pit",
+      "Hotel Corridor",
+      "21",
+      "-9%"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P2-03",
+      "Location causes low earnings: machine M-1152 moved Back Forty -> Main Entrance and its theo/hour changed +106%",
+      "14.26 -> 29.35 $/h; floor-adjusted +106% over 147 days",
+      "Unmoved machines over the same dates changed -0.2%",
+      "Only 4 moves in the data; one machine is a small sample",
+      "Medium",
+      "p2_move_effects",
+      "p2"
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "Action",
+     "One-time cost",
+     "Benefit in first 30 days",
+     "Pays back after",
+     "Net after 3 months: expected (low to high)",
+     "Net after 6 months: expected (low to high)"
+    ],
+    "data": [
+     [
+      "Machine inspection and paytable verification",
+      "$1,200",
+      "$2,897",
+      "0.4 months",
+      "$7,491 (-$1,200 to $16,182)",
+      "$16,182 (-$1,200 to $33,564)"
+     ],
+     [
+      "Wayfinding and signage refresh for a zone",
+      "$7,500",
+      "$5,300",
+      "1.4 months",
+      "$8,400 (-$7,500 to $32,700)",
+      "$24,300 (-$7,500 to $72,900)"
+     ],
+     [
+      "Relocate one machine",
+      "$5,400",
+      "$4,340",
+      "1.2 months",
+      "$7,620 (-$5,400 to $20,640)",
+      "$20,640 (-$5,400 to $46,680)"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [
+    [
+     "Pick lines to fund",
+     []
+    ],
+    [
+     "Action types (max 3)",
+     []
+    ]
+   ],
+   "radio": [
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ },
+ "Players & Comps": {
+  "alerts": [],
+  "captions": [
+   "148,893 player-months in groups of 10+. Net = won back minus wagered (opposite sign of casino win). Carded play only. Individual players are never shown.",
+   "Shares above 100% appear because the remaining players, as a group, won money. Full period, all tracked players (filters do not apply).",
+   "source: team/p3_concentration.parquet, script: Nikita's notebook (p3), scope: Full period, all tracked players",
+   "source: team/p3_players.parquet, script: Nikita's notebook (p3), scope: months 2025-01..2025-06, tier All, age All, region All",
+   "Comp cost is cost to the house, already inside POS cost of goods: counted once. Age and region filters do not apply to comps.",
+   "Reinvestment ratio from the minimum version's player table (comp cost / expected win); the team comps file has no expected-win column.",
+   "source: team/p1_comps.parquet + min_q5.parquet, script: Aditi's notebook (p1) + src/minimum.py, scope: months 2025-01..2025-06, tier All",
+   "Change the period, drill into a bank or a guest group. Every page follows these."
+  ],
+  "exceptions": [],
+  "headers": [
+   "Tracked players wagered $163,804,870, won back $148,219,409, net -$15,585,461",
+   "Comps cost the casino $190,669 in this selection",
+   "How concentrated are the losses?"
+  ],
+  "markdown": [
+   "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); html, body, .stApp, [data-testid=\"stAppViewContainer\"], button, input, select, textarea { font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; } .stApp { background: #F1FAEE; color: #1A2332; } .block-container { padding: 24px 24px 24px; max-width: 1280px; } @media (max-width: 640px) { .block-container { padding: 16px 16px; } } h1 { color: #1A2332; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; padding: 0; } h2 { color: #1A2332; font-size: 1.3rem; font-weight: 600; margin: 24px 0 8px; padding: 0; } h3 { color: #1A2332; font-size: 1.1rem; font-weight: 600; margin: 16px 0 8px; padding: 0; } p, li, td, th, label, span { font-variant-numeric: tabular-nums; } [data-testid=\"stCaptionContainer\"], [data-testid=\"stCaptionContainer\"] p { color: #4A5568 !important; opacity: 1 !important; font-size: 0.85rem; } a, a:visited { color: #1F6F6F; text-decoration: underline; text-underline-offset: 2px; } :focus-visible { outline: 3px solid #1F6F6F; outline-offset: 2px; } [data-testid=\"stSidebar\"] :focus-visible { outline-color: #A8DADC; } /* sidebar: navy with cream text */ [data-testid=\"stSidebar\"] { background: #1A2332; } [data-testid=\"stSidebar\"] label, [data-testid=\"stSidebar\"] p, [data-testid=\"stSidebar\"] span, [data-testid=\"stSidebar\"] [data-testid=\"stWidgetLabel\"] p { color: #F1FAEE; } [data-testid=\"stSidebar\"] .sb-title { color: #F1FAEE; font-weight: 600; font-size: 1.1rem; margin: 0 0 8px; } [data-testid=\"stSidebarNavLink\"] { border-radius: 6px; border-left: 4px solid transparent; } [data-testid=\"stSidebarNavLink\"]:hover { background: #2A3A52; } [data-testid=\"stSidebarNavLink\"][aria-current=\"page\"] { background: #2A3A52; border-left: 4px solid #2D8B8B; font-weight: 600; } [data-testid=\"stSidebarNavLink\"] span { color: #F1FAEE; } /* st.header / st.subheader inside pages: calmer, consistent sizes */ [data-testid=\"stHeading\"] h2, [data-testid=\"stHeadingWithActionElements\"] h2 { font-size: 1.45rem !important; font-weight: 700; line-height: 1.3; margin-top: 24px; } [data-testid=\"stHeading\"] h3, [data-testid=\"stHeadingWithActionElements\"] h3 { font-size: 1.15rem !important; font-weight: 600; } [data-testid=\"stHeading\"] a, [data-testid=\"stHeadingWithActionElements\"] a { display: none; } /* KPI cards */ [data-testid=\"stMetric\"] { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 8px; padding: 16px; box-shadow: none; } [data-testid=\"stMetricLabel\"], [data-testid=\"stMetricLabel\"] p { color: #4A5568; font-size: 0.85rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] > div { overflow: visible !important; text-overflow: clip !important; } [data-testid=\"stMetricValue\"] { color: #1A2332; font-weight: 600; font-variant-numeric: tabular-nums; } /* phone: KPI cards sit two per row instead of one tall stack */ @media (max-width: 640px) { [data-testid=\"stHorizontalBlock\"]:has([data-testid=\"stMetric\"]) > [data-testid=\"stColumn\"] { min-width: calc(50% - 8px) !important; flex: 1 1 calc(50% - 8px) !important; } [data-testid=\"stMetricValue\"] { font-size: 1.5rem; } } /* panels */ .answer { background: #A8DADC; border-left: 4px solid #1A2332; border-radius: 4px; padding: 16px; margin: 16px 0; color: #1A2332; } .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .note { background: #A8DADC33; border: 1px solid #D5E3E1; border-left: 4px solid #1F6F6F; border-radius: 4px; padding: 8px 16px; margin: 8px 0; color: #1A2332; font-size: 0.95rem; } .takeaway { color: #1A2332; font-weight: 600; margin: 16px 0 4px; } /* tables (st.table): seafoam header, wrapped text, scroll sideways on small screens */ [data-testid=\"stTable\"] { overflow-x: auto; } [data-testid=\"stTable\"] table { border: 1px solid #D5E3E1; border-radius: 8px; border-collapse: separate; border-spacing: 0; background: #FFFFFF; width: 100%; } [data-testid=\"stTable\"] th { background: #A8DADC; color: #1A2332; font-weight: 600; text-align: left; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; } [data-testid=\"stTable\"] td { color: #1A2332; padding: 8px 16px; border-bottom: 1px solid #D5E3E1; vertical-align: top; white-space: normal; min-width: 72px; max-width: 520px; } [data-testid=\"stExpander\"] { border: 1px solid #D5E3E1; border-radius: 8px; background: #FFFFFF; } /* verdict chips */ /* ===== redesign: brand, page header, hero, cards, map, checklist, meter ===== */ @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&display=swap'); .block-container { padding-top: 16px; } [data-testid=\"stSidebar\"] [data-testid=\"stLogo\"] { height: 44px; max-width: 100%; } .sb-foot { color: #A8DADC; font-size: 0.75rem; line-height: 1.4; margin-top: 24px; opacity: .9; } .ph { margin: 8px 0 16px; } .ph .eyebrow { color: #1F6F6F; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; } .ph h1 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.15; } .ph .q { color: #4A5568; font-size: 1.05rem; margin: 4px 0 8px; } .pills { display: flex; flex-wrap: wrap; gap: 8px; } .pill { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 999px; padding: 3px 12px; font-size: .8rem; color: #1A2332; } .pill b { color: #1F6F6F; font-weight: 600; margin-right: 4px; } .hero { background: #1A2332; color: #F1FAEE; border-radius: 12px; padding: 24px 24px 16px; margin: 0 0 24px; position: relative; overflow: hidden; } .hero .copy { position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; } .hero .hero-art { position: absolute; right: 24px; top: 16px; } @media (max-width: 1100px) { .hero .hero-art { display: none; } .hero .copy { max-width: 100%; min-height: 0; } } .hero .kicker { color: #A8DADC; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; } .hero h2 { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #F1FAEE; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 8px 0 8px; line-height: 1.1; } .hero p { color: #F1FAEE; font-size: 1.02rem; margin: 0 0 4px; max-width: 860px; opacity: .95; } .hero .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px; position: relative; z-index: 1; } .hero .tile { border-top: 3px solid #2D8B8B; padding-top: 8px; } .hero .tile .v { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; color: #A8DADC; line-height: 1.1; font-variant-numeric: tabular-nums; } .hero .tile .l { font-size: .82rem; color: #F1FAEE; opacity: .9; margin-top: 2px; } @media (max-width: 760px) { .hero .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hero h2 { font-size: 1.6rem; } } .sec { display: flex; align-items: baseline; gap: 8px; margin: 24px 0 8px; } .sec .n { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1F6F6F; font-weight: 800; font-size: .9rem; } .sec h2 { margin: 0 !important; } .sec-sub { color: #4A5568; margin: 0 0 16px; font-size: .95rem; } .gm-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; margin: 8px 0 8px; } a.gm, a.gm:visited { display: block; background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; color: #1A2332; text-decoration: none; transition: transform .12s ease, border-color .12s ease; } a.gm:hover { transform: translateY(-2px); border-color: #2D8B8B; } a.gm .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; } a.gm .chip { font-size: .75rem; padding: 2px 8px; } a.gm .rank { font-size: .75rem; color: #4A5568; font-weight: 600; letter-spacing: .06em; } a.gm .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.35rem; font-weight: 800; margin: 4px 0 2px; } a.gm .zone { font-size: .82rem; color: #4A5568; margin-bottom: 8px; } a.gm .why { font-size: .85rem; line-height: 1.35; margin: 8px 0; min-height: 3.4em; } a.gm .meta { display: flex; gap: 16px; font-size: .78rem; color: #4A5568; border-top: 1px solid #D5E3E1; padding-top: 8px; } a.gm .meta b { color: #1A2332; } a.gm .go { font-size: .78rem; color: #1F6F6F; font-weight: 600; margin-top: 8px; } .sec-sub b { color: #1A2332; } @media (max-width: 1200px) { .gm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } } @media (max-width: 760px) { .gm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 460px) { .gm-grid { grid-template-columns: 1fr; } } [data-testid=\"stSidebar\"] [data-testid=\"stCaptionContainer\"] p { color: #A8DADC !important; } .legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: .82rem; color: #1A2332; margin: 4px 0 8px; } .case { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 24px; } .case .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.1; } .case .sub { color: #4A5568; margin: 4px 0 16px; font-size: .9rem; } .case .why { font-size: 1rem; margin: 16px 0 0; padding-top: 16px; border-top: 1px solid #D5E3E1; } .checks { list-style: none; padding: 0; margin: 8px 0; } .checks li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #D5E3E1; } .checks li:last-child { border-bottom: 0; } .checks .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem; } .checks .ic.yes { background: #1F6F6F; color: #F1FAEE; } .checks .ic.maybe { background: #F5D9A0; color: #1A2332; } .checks .ic.no { background: #E2E8F0; color: #1A2332; } .checks .t { font-weight: 600; } .checks .e { color: #4A5568; font-size: .88rem; } .checks .r { font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; } .meter { background: #FFFFFF; border: 1px solid #D5E3E1; border-radius: 12px; padding: 16px 24px; margin: 8px 0 16px; } .meter-flex { display: flex; gap: 24px; align-items: center; } .meter-main { flex: 1; min-width: 0; } @media (max-width: 640px) { .meter-flex { flex-direction: column; align-items: stretch; } .chips-art { align-self: center; } } .case { position: relative; } .case .slot-art { position: absolute; right: 16px; top: 16px; } .case .id, .case .sub { padding-right: 92px; } .zoomcard { background: #FFFFFF; border: 1px solid #D5E3E1; border-left: 5px solid var(--vc); border-radius: 8px; padding: 16px; margin: 8px 0; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; } .zoomcard .id { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 1.4rem; } .zoomcard .why { font-size: .92rem; } .zoomcard .meta { color: #4A5568; font-size: .82rem; margin-top: 2px; } .zoomcard a { font-weight: 600; white-space: nowrap; } @media (max-width: 640px) { .zoomcard { grid-template-columns: 1fr; } } .meter .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; } .meter .big { font-family: 'Inter Tight', Inter, 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 1.8rem; font-weight: 800; } .meter .bar { height: 14px; background: #A8DADC66; border-radius: 999px; margin: 8px 0; overflow: hidden; } .meter .fill { height: 100%; background: #1A2332; border-radius: 999px; } .meter .fill.over { background: #B42318; } .meter .lbl { color: #4A5568; font-size: .85rem; } .chip { white-space: nowrap; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; border: 1px solid #1A233222; }",
+   "The 10% of tracked players with the largest losses account for 80% of all net losses.",
+   "Comp cost was 1.11% of expected win in 2025-01 and 1.32% in 2025-06.",
+   "Filters",
+   "Synthetic data, release 0.9.0-draft. Analysis by the team in Databricks; dashboard in Streamlit. Fictional casino: findings are not facts about a real casino."
+  ],
+  "metrics": [
+   [
+    "Wagered",
+    "$163.8M",
+    ""
+   ],
+   [
+    "Won back",
+    "$148.2M",
+    ""
+   ],
+   [
+    "Players' net",
+    "-$15.6M",
+    ""
+   ],
+   [
+    "Comp cost",
+    "$190,669",
+    ""
+   ]
+  ],
+  "tables": [
+   {
+    "columns": [
+     "Month",
+     "Player-months",
+     "Wagered",
+     "Won back",
+     "Players' net"
+    ],
+    "data": [
+     [
+      "Jan 2025",
+      "24,687",
+      "$27,260,837",
+      "$24,663,556",
+      "-$2,597,281"
+     ],
+     [
+      "Feb 2025",
+      "24,031",
+      "$26,143,705",
+      "$23,557,908",
+      "-$2,585,797"
+     ],
+     [
+      "Mar 2025",
+      "26,346",
+      "$28,892,700",
+      "$26,159,442",
+      "-$2,733,257"
+     ],
+     [
+      "Apr 2025",
+      "24,555",
+      "$26,775,173",
+      "$24,292,634",
+      "-$2,482,539"
+     ],
+     [
+      "May 2025",
+      "25,970",
+      "$28,179,264",
+      "$25,535,976",
+      "-$2,643,287"
+     ],
+     [
+      "Jun 2025",
+      "23,304",
+      "$26,553,191",
+      "$24,009,892",
+      "-$2,543,299"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P3-06",
+      "Carded player losses are highly concentrated",
+      "Top 1% of carded players = 27% of net loss; top 10% = 80%",
+      "Checked by tier and age band to see if one group drives it",
+      "Carded play only; uncarded players are not visible",
+      "High",
+      "p3_concentration",
+      "p3"
+     ]
+    ],
+    "index": [
+     0
+    ]
+   },
+   {
+    "columns": [
+     "Month",
+     "Comp cost",
+     "Points earned",
+     "Points redeemed"
+    ],
+    "data": [
+     [
+      "Jan 2025",
+      "$28,750",
+      "27,228,104",
+      "1,433,623"
+     ],
+     [
+      "Feb 2025",
+      "$29,854",
+      "26,113,804",
+      "1,411,208"
+     ],
+     [
+      "Mar 2025",
+      "$33,256",
+      "28,860,527",
+      "1,531,314"
+     ],
+     [
+      "Apr 2025",
+      "$31,390",
+      "26,745,016",
+      "1,404,060"
+     ],
+     [
+      "May 2025",
+      "$34,446",
+      "28,146,806",
+      "719,172"
+     ],
+     [
+      "Jun 2025",
+      "$32,973",
+      "26,522,943",
+      "673,602"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   {
+    "columns": [
+     "ID",
+     "Claim",
+     "Result",
+     "Alternative explanation tested",
+     "Limitation",
+     "Confidence",
+     "Evidence table",
+     "From"
+    ],
+    "data": [
+     [
+      "P1-06",
+      "The comp program cost $190,669 (Jan-Jun), already inside the $937,936 POS cost of goods; guests saw $682,750 of menu value.",
+      "$190,669 comp cost",
+      "player_period comp cost matches property_day comp cost to the cent; counted once.",
+      "Only carded play earns points; comp cost is house cost, not menu price.",
+      "high",
+      "p1_comps",
+      "p1"
+     ],
+     [
+      "P1-07",
+      "On 2025-05-01 the point price of comps was cut overnight: 13.1 -> 5.8 points per comp dollar (-56%). Comp cost per $1,000 carded theo rose from $11.95 to $13.09 (95% CI of change +0.65 to +1.67).",
+      "comp cost/day $1,027 -> $1,105; redemptions/day 322 -> 340",
+      "30 days either side only (less seasonality): cost per $1k theo change +0.55 (CI -0.06 to +1.16). Daily block bootstrap by week.",
+      "No control group: the change was floor-wide, so other May events can't be fully ruled out.",
+      "high",
+      "p1_comp_rate_daily",
+      "p1"
+     ],
+     [
+      "P1-08",
+      "Making comps cost fewer points did not bring more carded play: carded theo per day changed -1.6% (95% CI $-4,009 to $+1,288 per day).",
+      "$86,022 -> $84,629 carded theo/day",
+      "Checked the 30-day window around the change as well.",
+      "Two months after; long-run loyalty effects unknown. A randomized pilot would settle it.",
+      "medium",
+      "p1_comp_change",
+      "p1"
+     ],
+     [
+      "P1-09",
+      "Platinum comp cost per month went from $2,629 to $8,442 while Gold fell $17,203 -> $14,682: more players are reaching Platinum (tiers use lifetime points), so tier mix is a second driver of comp cost.",
+      "Base: $10,981 -> $10,586/month; Gold: $17,203 -> $14,682/month; Platinum: $2,629 -> $8,442/month",
+      "Split by tier at month end so the rate change and tier creep are not confused.",
+      "Tier is the tier after the player's last event that month.",
+      "medium",
+      "p1_comps",
+      "p1"
+     ]
+    ],
+    "index": [
+     0,
+     1,
+     2,
+     3
+    ]
+   }
+  ],
+  "widgets": {
+   "multiselect": [],
+   "radio": [
+    [
+     "Age band",
+     "All"
+    ],
+    [
+     "Home region",
+     "All"
+    ],
+    [
+     "Guest group (opening tier)",
+     "All"
+    ]
+   ],
+   "selectbox": [
+    [
+     "Period",
+     "Full (Jan-Jun)"
+    ],
+    [
+     "Bank",
+     "All"
+    ]
+   ]
+  }
+ }
+}

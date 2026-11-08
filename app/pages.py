@@ -179,7 +179,7 @@ def _players_min(sel):
     st.caption("Player net = payout minus wager (opposite sign of house win). Carded play only. Groups of 10+ players. "
                f"Full-period concentration: the top 10% of {f4['tracked_players']:,} tracked players hold {f4['top10pct_share_of_theo']:.0%} of theo.")
     agg = t.groupby("month")[["wagered_usd", "paid_back_usd", "net_usd", "theo_usd"]].sum()
-    T.bars(agg.reset_index(), "month", "net_usd", "Month", "Player net, wins minus losses ($)", color=T.NAVY)
+    T.bars(agg.reset_index(), "month", "net_usd", "Month", "Player net, wins minus losses ($)", color=T.CHART_MARK)
     show(t, {"month": ("Month", "month"), "tier": ("Loyalty tier", "text"), "players": ("Players", "int"), "wagered_usd": ("Wagered", "usd"),
              "paid_back_usd": ("Paid back", "usd"), "net_usd": ("Players' net", "usd"), "theo_usd": ("Expected casino win", "usd")})
     source("min_q4.parquet", SCRIPT, f"months {ms[0]}..{ms[-1]}, tier {sel['tier']}")
@@ -461,7 +461,7 @@ def _map_card(v: pd.DataFrame, mid: str):
                  f'<div class="why">{html.escape(str(r.reason))}</div>'
                  f'<div class="meta">{gm}{html.escape(str(r.zone_name))} &middot; casino win {usd(r.house_win_usd)} vs expected {usd(r.theo_usd)} '
                  f'&middot; luck pct {r.luck_score:.1%}</div></div>'
-                 f'<a href="machine_details?m={html.escape(mid)}" target="_self">Open case file &rarr;</a></div>')
+                 f'<a href="machine_details?m={html.escape(mid)}{T.SKIN_Q}" target="_self">Open case file &rarr;</a></div>')
 
 
 def _zone_evidence():
@@ -849,7 +849,7 @@ def players(sel):
         kp[0:3] = [("Wagered", T.money_short(x.wagered_usd.sum()), usd(x.wagered_usd.sum())), ("Won back", T.money_short(x.won_back_usd.sum()), usd(x.won_back_usd.sum())),
                    ("Players' net", T.money_short(x.net_usd.sum()), usd(x.net_usd.sum()))]
         mo = x.groupby("month").agg(w=("wagered_usd", "sum"), b=("won_back_usd", "sum"), n=("net_usd", "sum"), pc=("player_count", "sum")).reset_index()
-        T.bars(mo, "month", "n", "Month", "Players' net, wins minus losses ($)", color=T.NAVY)
+        T.bars(mo, "month", "n", "Month", "Players' net, wins minus losses ($)", color=T.CHART_MARK)
         show(mo, {"month": ("Month", "month"), "pc": ("Player-months", "int"), "w": ("Wagered", "usd"), "b": ("Won back", "usd"), "n": ("Players' net", "usd")})
     cn = team("p3_concentration")
     if cn is not None:
