@@ -111,7 +111,9 @@ a, a:visited {{ color: {TEAL_DARK}; text-decoration: underline; text-underline-o
 .pill b {{ color: {TEAL_DARK}; font-weight: 600; margin-right: 4px; }}
 
 .hero {{ background: {NAVY}; color: {CREAM}; border-radius: 12px; padding: {S4}px {S4}px {S3}px; margin: 0 0 {S4}px; position: relative; overflow: hidden; }}
-.hero::after {{ content: ""; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 28px solid {TEAL}33; }}
+.hero .copy {{ position: relative; z-index: 1; max-width: calc(100% - 360px); min-height: 212px; }}
+.hero .hero-art {{ position: absolute; right: {S4}px; top: {S3}px; }}
+@media (max-width: 1100px) {{ .hero .hero-art {{ display: none; }} .hero .copy {{ max-width: 100%; min-height: 0; }} }}
 .hero .kicker {{ color: {SEAFOAM}; font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }}
 .hero h2 {{ font-family: 'Inter Tight', {FONT}; color: {CREAM}; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: {S2}px 0 {S2}px; line-height: 1.1; }}
 .hero p {{ color: {CREAM}; font-size: 1.02rem; margin: 0 0 {S1}px; max-width: 860px; opacity: .95; }}
@@ -162,6 +164,18 @@ a.gm .go {{ font-size: .78rem; color: {TEAL_DARK}; font-weight: 600; margin-top:
 .checks .r {{ font-size: .8rem; font-weight: 700; white-space: nowrap; padding-top: 3px; }}
 
 .meter {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 12px; padding: {S3}px {S4}px; margin: {S2}px 0 {S3}px; }}
+.meter-flex {{ display: flex; gap: {S4}px; align-items: center; }}
+.meter-main {{ flex: 1; min-width: 0; }}
+@media (max-width: 640px) {{ .meter-flex {{ flex-direction: column; align-items: stretch; }} .chips-art {{ align-self: center; }} }}
+.case {{ position: relative; }}
+.case .slot-art {{ position: absolute; right: {S3}px; top: {S3}px; }}
+.case .id, .case .sub {{ padding-right: 92px; }}
+.zoomcard {{ background: {SURFACE}; border: 1px solid {BORDER}; border-left: 5px solid var(--vc); border-radius: 8px; padding: {S3}px; margin: {S2}px 0;
+             display: grid; grid-template-columns: auto 1fr auto; gap: {S3}px; align-items: center; }}
+.zoomcard .id {{ font-family: 'Inter Tight', {FONT}; font-weight: 800; font-size: 1.4rem; }}
+.zoomcard .why {{ font-size: .92rem; }} .zoomcard .meta {{ color: {MUTED}; font-size: .82rem; margin-top: 2px; }}
+.zoomcard a {{ font-weight: 600; white-space: nowrap; }}
+@media (max-width: 640px) {{ .zoomcard {{ grid-template-columns: 1fr; }} }}
 .meter .row {{ display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: {S2}px; }}
 .meter .big {{ font-family: 'Inter Tight', {FONT}; font-size: 1.8rem; font-weight: 800; }}
 .meter .bar {{ height: 14px; background: {SEAFOAM}66; border-radius: 999px; margin: {S2}px 0; overflow: hidden; }}
@@ -217,8 +231,9 @@ def takeaway(text: str):
 
 
 def chip(verdict: str) -> str:
+    import art  # lazy: art imports theme tokens
     bg, fg = CHIPS.get(verdict, (SEAFOAM, NAVY))
-    return f'<span class="chip" style="background:{bg};color:{fg}">{html.escape(str(verdict))}</span>'
+    return f'<span class="chip" style="background:{bg};color:{fg}">{art.verdict_icon(str(verdict), fg)}{html.escape(str(verdict))}</span>'
 
 
 def chip_css(v) -> str:
@@ -319,8 +334,9 @@ def page_header(title: str, question: str, pills: list[tuple[str, str]]):
 def hero(kicker: str, headline: str, lines: list[str], tiles: list[tuple[str, str]]):
     t = "".join(f'<div class="tile"><div class="v">{html.escape(v)}</div><div class="l">{html.escape(l)}</div></div>' for v, l in tiles)
     body = "".join(f"<p>{_inline(x)}</p>" for x in lines)
-    html_block(f'<section class="hero" aria-label="Answer in brief"><div class="kicker">{html.escape(kicker)}</div>'
-               f'<h2>{html.escape(headline)}</h2>{body}<div class="tiles">{t}</div></section>')
+    import art
+    html_block(f'<section class="hero" aria-label="Answer in brief">{art.hero_floor()}<div class="copy"><div class="kicker">{html.escape(kicker)}</div>'
+               f'<h2>{html.escape(headline)}</h2>{body}</div><div class="tiles">{t}</div></section>')
 
 
 def section(num: str, title: str, sub: str = ""):
@@ -356,7 +372,8 @@ def checklist(items: list[tuple[str, str, str]]):
 def meter(spent: float, budget: float = 100000, types: int = 0):
     pct = min(spent / budget, 1) * 100 if budget else 0
     over = spent > budget
-    html_block(f'<div class="meter" role="group" aria-label="Budget used"><div class="row"><span class="big">${spent:,.0f} <span class="lbl">of ${budget:,.0f} spent</span></span>'
+    import art
+    html_block(f'<div class="meter" role="group" aria-label="Budget used"><div class="meter-flex">{art.chip_stacks(spent, budget)}<div class="meter-main"><div class="row"><span class="big">${spent:,.0f} <span class="lbl">of ${budget:,.0f} spent</span></span>'
                f'<span class="lbl">{"Over budget" if over else f"${budget - spent:,.0f} kept"} &middot; {types} of 3 action types used</span></div>'
                f'<div class="bar"><div class="fill{" over" if over else ""}" style="width:{pct:.1f}%"></div></div>'
-               f'<div class="lbl">Keeping money is allowed and uses no action slot.</div></div>')
+               f'<div class="lbl">Keeping money is allowed and uses no action slot. Each chip = $10,000.</div></div></div></div>')

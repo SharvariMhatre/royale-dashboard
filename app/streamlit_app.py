@@ -6,7 +6,7 @@ import importlib
 import streamlit as st
 
 # Reload our own modules on every run: a long-lived server process can otherwise keep stale versions after a deploy.
-for _m in ("validate_contracts", "budget", "theme", "common", "pages"):
+for _m in ("validate_contracts", "budget", "theme", "art", "common", "pages"):
     importlib.reload(importlib.import_module(_m))
 from common import sidebar, header, footer  # noqa: E402
 import pages  # noqa: E402

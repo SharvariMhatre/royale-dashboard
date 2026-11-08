@@ -402,33 +402,65 @@ def _floor_map(v: pd.DataFrame, bank: str):
     d = v.copy()
     d["gm10"] = d.in_manager_bottom10.map({True: "Yes", False: "No"})
     d["focus"] = True if bank == ALL else (d.bank_id == bank)
+    zones = sorted(d.zone_name.unique())
+    zoom = st.pills("Zoom to a zone", ["Whole floor"] + zones, default="Whole floor", key="map_zoom") or "Whole floor"
+    view = d if zoom == "Whole floor" else d[d.zone_name == zoom]
+    pad_x, pad_y = (6, 10) if zoom == "Whole floor" else (4, 6)
     dom = [k for k in T.VERDICT_ORDER if k in set(d.verdict)]
-    sc_x = alt.Scale(domain=[d.x.min() - 6, d.x.max() + 6], nice=False)
-    sc_y = alt.Scale(domain=[d.y.max() + 10, d.y.min() - 8], nice=False)  # flipped so the plan reads top-down
+    sc_x = alt.Scale(domain=[view.x.min() - pad_x, view.x.max() + pad_x], nice=False)
+    sc_y = alt.Scale(domain=[view.y.max() + pad_y, view.y.min() - pad_y - 2], nice=False)  # flipped so the plan reads top-down
     tip = [alt.Tooltip("machine_id:N", title="Machine"), alt.Tooltip("zone_name:N", title="Zone"), alt.Tooltip("bank_id:N", title="Bank"),
            alt.Tooltip("verdict:N", title="Verdict"), alt.Tooltip("house_win_usd:Q", title="Casino win", format="$,.0f"),
            alt.Tooltip("luck_score:Q", title="Luck percentile", format=".1%"), alt.Tooltip("gm10:N", title="On the GM's list")]
+    pick = alt.selection_point(name="pick", fields=["machine_id"], on="click", clear="dblclick", empty=False)
     zb = d[d.zone_name == "Back Forty"]
     layers = []
     if len(zb):
         box = pd.DataFrame([{"x": zb.x.min() - 3.5, "x2": zb.x.max() + 3.5, "y": zb.y.min() - 4, "y2": zb.y.max() + 3.5}])
         layers.append(alt.Chart(box).mark_rect(fill=T.SEAFOAM, fillOpacity=0.25, stroke=T.TEAL_DARK, strokeDash=[6, 4], strokeWidth=2)
                       .encode(x=alt.X("x:Q", scale=sc_x, axis=None), x2="x2", y=alt.Y("y:Q", scale=sc_y, axis=None), y2="y2"))
-    pts = alt.Chart(d).mark_point(filled=True, size=70, strokeWidth=0).encode(
+    big = 1 if zoom == "Whole floor" else 2.4
+    pts = alt.Chart(d).mark_point(filled=True, strokeWidth=0, cursor="pointer", clip=True).encode(
         x=alt.X("x:Q", scale=sc_x, axis=None), y=alt.Y("y:Q", scale=sc_y, axis=None),
         color=alt.Color("verdict:N", title="Verdict", scale=alt.Scale(domain=dom, range=[T.VERDICT_COLOR[k] for k in dom])),
         shape=alt.Shape("verdict:N", title="Verdict", scale=alt.Scale(domain=dom, range=[T.VERDICT_SHAPE[k] for k in dom])),
-        opacity=alt.condition("datum.focus", alt.value(0.95), alt.value(0.15)), tooltip=tip)
-    ring = alt.Chart(d[d.in_manager_bottom10]).mark_point(size=360, filled=False, color=T.NAVY, strokeWidth=2.2).encode(
-        x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), tooltip=tip)
+        size=alt.condition(pick, alt.value(260 * big), alt.value(70 * big)),
+        opacity=alt.condition("datum.focus", alt.value(0.95), alt.value(0.15)), tooltip=tip).add_params(pick)
+    ring = alt.Chart(d[d.in_manager_bottom10]).mark_point(filled=False, color=T.NAVY, strokeWidth=2.2, clip=True).encode(
+        x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), size=alt.value(360 * big), tooltip=tip)
     zl = d.groupby("zone_name").agg(x=("x", "mean"), y=("y", "min")).reset_index()
     zl["y"] = zl.y - 4.5 - (zl.zone_name == "Back Forty") * 3
-    lab = alt.Chart(zl).mark_text(fontWeight=700, fontSize=12, color=T.NAVY).encode(
+    lab = alt.Chart(zl).mark_text(fontWeight=700, fontSize=12 if zoom == "Whole floor" else 15, color=T.NAVY, clip=True).encode(
         x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), text="zone_name:N")
-    ch = alt.layer(*layers, pts, ring, lab).configure_legend(orient="top", symbolSize=110, labelFontSize=12, titleFontSize=12)
-    st.altair_chart(ch.properties(height=520), theme=None, width="stretch")
+    layer_list = [*layers, pts, ring, lab]
+    if zoom != "Whole floor":
+        idl = alt.Chart(view).mark_text(dy=-14, fontSize=10, color=T.NAVY, clip=True).encode(
+            x=alt.X("x:Q", scale=sc_x), y=alt.Y("y:Q", scale=sc_y), text="machine_id:N")
+        layer_list.append(idl)
+    ch = alt.layer(*layer_list).configure_legend(orient="top", symbolSize=110, labelFontSize=12, titleFontSize=12).properties(height=520)
+    ev = st.altair_chart(ch, theme=None, width="stretch", on_select="rerun", selection_mode="pick", key="floor_map")
+    sel_ids = [p.get("machine_id") for p in ((ev or {}).get("selection", {}) or {}).get("pick", []) if p.get("machine_id")]
+    if sel_ids:
+        _map_card(v, sel_ids[0])
+    else:
+        T.info("**Click any machine** on the map to see its verdict here; double-click to clear. Use the zone buttons to zoom in.")
     st.caption("Positions from the floor plan (floor_locations x/y; current spot for each machine). Hover a machine for its numbers. "
                "source: team/p2_verdicts.parquet; script: Bharath's notebook (p2).")
+
+
+def _map_card(v: pd.DataFrame, mid: str):
+    r = v[v.machine_id == mid]
+    if r.empty:
+        return
+    r = r.iloc[0]
+    import art
+    gm = f"GM rank #{int(r.manager_rank)} &middot; " if r.in_manager_bottom10 else ""
+    T.html_block(f'<div class="zoomcard" style="--vc:{T.VERDICT_COLOR.get(r.verdict, T.TEAL)}" role="status" aria-live="polite">'
+                 f'{art.slot_machine(str(r.verdict))}<div><div class="id">{html.escape(mid)} &nbsp;{T.chip(r.verdict)}</div>'
+                 f'<div class="why">{html.escape(str(r.reason))}</div>'
+                 f'<div class="meta">{gm}{html.escape(str(r.zone_name))} &middot; casino win {usd(r.house_win_usd)} vs expected {usd(r.theo_usd)} '
+                 f'&middot; luck pct {r.luck_score:.1%}</div></div>'
+                 f'<a href="machine_details?m={html.escape(mid)}" target="_self">Open case file &rarr;</a></div>')
 
 
 def _zone_evidence():
@@ -576,7 +608,8 @@ def details(sel):
     rank = f"GM rank #{int(r.manager_rank)} &middot; " if r.in_manager_bottom10 else ""
     left, right = st.columns([5, 7], gap="large")
     with left:
-        T.html_block(f'<div class="case"><div class="sub">{rank}{html.escape(str(r.zone_name))} &middot; bank {html.escape(str(r.bank_id))} &middot; '
+        import art
+        T.html_block(f'<div class="case">{art.slot_machine(str(r.verdict))}<div class="sub">{rank}{html.escape(str(r.zone_name))} &middot; bank {html.escape(str(r.bank_id))} &middot; '
                      f'{html.escape(str(r.theme))}</div><p class="id">{html.escape(mid)}</p>'
                      f'<div style="margin-top:8px">{T.chip(r.verdict)} &nbsp;<span style="color:{T.MUTED};font-size:.85rem">{html.escape(str(r.confidence).lower())} confidence</span></div>'
                      f'<p class="why">{html.escape(str(r.reason))}</p></div>')
