@@ -9,3 +9,4 @@
 - 2026-11-07 Claude: drafted docs (writeup.md 370 words, evidence.md, ai_disclosure.md, judge_qa.md) via src/make_docs.py from team.json; extended integrate_team.py findings (inspect, moves, luck tests, gm plan).
 - 2026-11-07 Claude: revised docs per Sharvari (all six questions, same-game zone wording, model decision, Inspect rule |z|>3.29); ai_disclosure tools updated.
 - 2026-11-07 Claude: Ocean Depths theme, chart helpers, KPI rows; browser checks via Chrome.
+- 2026-11-07 Claude: applied Redesign patch (authored in a separate Claude Code Opus 5.5 session) via git am; re-ran tests/pages.
