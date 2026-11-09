@@ -1,1 +1,1 @@
-window.ASK_ENDPOINT = ""; // set to your Cloudflare Worker URL to enable free-form questions (see v2/worker)
+window.ASK_ENDPOINT = "/api/ask"; // Vercel function (v2/site/api/ask.js); answers only if ANTHROPIC_API_KEY is set in Vercel

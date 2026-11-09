@@ -3,7 +3,7 @@
 The v2 floor review was built after TAMU Datathon 2026 judging by Sharvari Mhatre with Claude (Anthropic) in Claude Code, as a coding, analysis and writing assistant. The submitted entry (Streamlit app in `app/`, Databricks notebooks by Aditi, Bharath and Nikita) is unchanged and keeps its own disclosure in `docs/ai_disclosure.md`.
 
 ## What Claude did
-- Wrote the DuckDB pipeline (`v2/analysis/`), the static dashboard (`v2/site/`), the verification script, the browser parity test, the Cloudflare Worker and these documents.
+- Wrote the DuckDB pipeline (`v2/analysis/`), the static dashboard (`v2/site/`), the verification script, the browser parity test, the Vercel function behind "Ask the floor" and these documents.
 - Proposed methods and options; Sharvari chose among them. Choices are logged in `v2/DECISIONS.md`.
 
 ## What we learned from other entries, and how it is labelled
@@ -20,4 +20,4 @@ After judging we studied published entries in the Devpost gallery. We then ran o
 - Every page was reviewed in a browser at desktop and phone width.
 
 ## Limits
-The data is synthetic (release 0.9.0-draft). Plan effects are assumption ranges grounded in this data, each listed on the dashboard. The "Ask the floor" assistant answers known questions in the browser from verified numbers; free-form questions go to Claude only if a Worker is configured, and it receives only the published facts.
+The data is synthetic (release 0.9.0-draft). Plan effects are assumption ranges grounded in this data, each listed on the dashboard. The "Ask the floor" assistant answers known questions in the browser from verified numbers; free-form questions go to Claude only if `ANTHROPIC_API_KEY` is set on Vercel, and it receives only the published facts.

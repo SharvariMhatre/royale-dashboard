@@ -71,7 +71,9 @@
       say(q, "<span class='muted'>Checking the verified numbers...</span>");
       try {
         const r = await fetch(window.ASK_ENDPOINT, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, facts: facts() }) });
-        const j = await r.json(); $("#ask-log").lastElementChild.innerHTML = esc(j.answer || j.error || "No answer.") + "<cite>Answered by Claude from the verified facts on this page.</cite>";
+        const j = await r.json().catch(() => ({}));
+        $("#ask-log").lastElementChild.innerHTML = j.answer ? esc(j.answer) + "<cite>Answered by Claude from the verified facts on this page.</cite>"
+          : "I answer free-form questions only when the assistant is switched on. Try a machine ID (like M-1158), the GM's list, Back Forty, downtime, the forecast, the plan, comps, players or luck.";
       } catch (e) { $("#ask-log").lastElementChild.textContent = "The assistant is offline. Try one of the suggested questions."; }
       return;
     }

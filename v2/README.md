@@ -27,9 +27,12 @@ Set `ROYALE_DATA` to point at the data folder if it lives elsewhere.
 | `analysis/claims.py` | Claims & Evidence appendix (`docs/CLAIMS.md`, `site/data/claims.json`) |
 | `analysis/verify.py` | 40 checks against the raw tables |
 | `site/` | The dashboard: `index.html`, `app.js` (engine + views + judge tour), `ask.js` (Ask the floor) |
-| `worker/` | Optional Cloudflare Worker that lets Claude answer free-form questions from the published facts only |
+| `site/api/ask.js` | Vercel function that lets Claude answer free-form questions from the published facts only (needs `ANTHROPIC_API_KEY`) |
 
-## Publish
-`.github/workflows/pages.yml` publishes `v2/site` to GitHub Pages on every push to `main`. One-time setup: repo Settings, Pages, Source: GitHub Actions.
+## Publish on Vercel
+1. vercel.com, Add New, Project, import `SharvariMhatre/royale-dashboard`.
+2. Root Directory: `v2/site`. Framework Preset: Other. Leave Build Command and Output Directory empty.
+3. Optional: Settings, Environment Variables, add `ANTHROPIC_API_KEY` to switch on free-form questions in "Ask the floor". Without it, the built-in verified answers still work.
+4. Deploy. Every push to `main` redeploys; other branches get preview links.
 
 Write-up: `docs/WRITEUP.md` (387 words). AI use: `docs/AI_DISCLOSURE.md`. Data is synthetic.
