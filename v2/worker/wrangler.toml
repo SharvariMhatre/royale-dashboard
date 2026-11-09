@@ -1,0 +1,12 @@
+name = "gilded-ace-ask"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+SITE_URL = "https://sharvarimhatre.github.io/royale-dashboard"
+ALLOWED_ORIGINS = "https://sharvarimhatre.github.io"
+
+# Optional rate limit store: npx wrangler kv namespace create RATE, then uncomment with its id
+# [[kv_namespaces]]
+# binding = "RATE"
+# id = "..."

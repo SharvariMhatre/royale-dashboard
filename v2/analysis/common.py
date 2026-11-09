@@ -64,8 +64,29 @@ def con() -> duckdb.DuckDBPyConnection:
     return c
 
 
+def clean(o):
+    """JSON for browsers: NaN/inf become null, numpy scalars become Python numbers."""
+    import math
+    if isinstance(o, dict):
+        return {str(k): clean(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [clean(v) for v in o]
+    if hasattr(o, "item") and not isinstance(o, (str, bytes)):
+        try:
+            o = o.item()
+        except Exception:
+            pass
+    if isinstance(o, float) and (math.isnan(o) or math.isinf(o)):
+        return None
+    return o
+
+
+def dump(obj, **kw) -> str:
+    return json.dumps(clean(obj), allow_nan=False, default=str, **kw)
+
+
 def save(name: str, obj) -> None:
-    (RESULTS / f"{name}.json").write_text(json.dumps(obj, indent=1, default=float))
+    (RESULTS / f"{name}.json").write_text(dump(obj, indent=1))
 
 
 def load(name: str):

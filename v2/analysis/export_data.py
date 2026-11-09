@@ -8,7 +8,7 @@ import json
 
 import numpy as np
 
-from common import CAL, EVT, LOC, OUT, PD, PP, TRAF, con
+from common import dump, CAL, EVT, LOC, OUT, PD, PP, TRAF, WALK, con
 
 
 def r(x, n=2):
@@ -20,7 +20,7 @@ def main() -> None:
     days = [str(d)[:10] for (d,) in c.sql(f"SELECT gaming_date FROM {CAL} ORDER BY 1").fetchall()]
     f = c.sql("SELECT * FROM floor ORDER BY gaming_date, machine_id").df()
     dims = {}
-    for col in ["machine_id", "zone_id", "bank_id", "config_id"]:
+    for col in ["machine_id", "zone_id", "bank_id", "config_id", "location_id"]:
         dims[col] = sorted(f[col].unique().tolist())
     idx = {col: {v: i for i, v in enumerate(dims[col])} for col in dims}
     day_i = {d: i for i, d in enumerate(days)}
@@ -30,6 +30,7 @@ def main() -> None:
         "z": [idx["zone_id"][v] for v in f.zone_id],
         "b": [idx["bank_id"][v] for v in f.bank_id],
         "g": [idx["config_id"][v] for v in f.config_id],
+        "l": [idx["location_id"][v] for v in f.location_id],
         "sh": r(f.sched_h, 3), "ah": r(f.avail_h, 3), "oh": r(f.occ_h, 3),
         "sp": f.spins.astype(int).tolist(), "hi": f.hits.astype(int).tolist(),
         "ci": r(f.coin_in), "hw": r(f.house_win), "th": r(f.theo, 4), "v": r(f.luck_var, 1),
@@ -41,7 +42,10 @@ def main() -> None:
                         arg_max(location_id, gaming_date) last_loc FROM floor GROUP BY 1 ORDER BY 1""").df()
     games = c.sql("SELECT config_id, any_value(theme) theme, any_value(rtp) rtp, any_value(hit_p) hit_p FROM floor GROUP BY 1 ORDER BY 1").df()
     slots = c.sql(f"SELECT location_id, bank_id, zone_id, x_m, y_m FROM {LOC} WHERE node_type='slot'").df()
+    nodes = c.sql(f"SELECT location_id, node_type, zone_id, bank_id, name, x_m, y_m FROM {LOC} WHERE node_type IN ('zone','bank','entrance','outlet')").df()
+    walks = c.sql(f"SELECT walkway_id, zone_a, zone_b, closed_from_utc::VARCHAR cf, closed_to_utc::VARCHAR ct FROM {WALK}").df()
     meta = {
+        "nodes": nodes.to_dict("records"), "walkways": walks.where(walks.notna(), None).to_dict("records"),
         "days": days,
         "weekday": [w for (w,) in c.sql(f"SELECT local_weekday FROM {CAL} ORDER BY gaming_date").fetchall()],
         "dims": dims,
@@ -60,7 +64,7 @@ def main() -> None:
     events = c.sql(f"SELECT event_id, name, event_type, start_date::VARCHAR s, end_date::VARCHAR e, announced_date::VARCHAR a, local_scope FROM {EVT} ORDER BY s").df()
     payload = {"meta": meta, "floor": floor, "property": prop.to_dict("list"),
                "traffic": traffic.to_dict("list"), "events": events.to_dict("records")}
-    (OUT / "floor.json").write_text(json.dumps(payload, separators=(",", ":"), default=float))
+    (OUT / "floor.json").write_text(dump(payload, separators=(",", ":")))
 
     # Guests: tracked play by month x tier x age x region (sums only, so any group/period is exact)
     g = c.sql(f"""SELECT period_month mo, opening_tier tier, coalesce(age_band,'unknown') age, home_region region,
@@ -69,7 +73,7 @@ def main() -> None:
         sum(points_earned)::DOUBLE pe, sum(points_redeemed)::DOUBLE pr, sum(observed_visits)::DOUBLE visits,
         sum(CASE WHEN tracked_net_usd > 0 THEN 1 ELSE 0 END) ahead_pm
         FROM {PP} GROUP BY ALL ORDER BY ALL""").df()
-    (OUT / "guests.json").write_text(json.dumps(g.to_dict("list"), separators=(",", ":"), default=float))
+    (OUT / "guests.json").write_text(dump(g.to_dict("list"), separators=(",", ":")))
     print(f"floor rows {len(f):,}  guest cells {len(g):,}  size {(OUT / 'floor.json').stat().st_size / 1e6:.1f} MB")
 
 

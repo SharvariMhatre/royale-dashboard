@@ -1,0 +1,162 @@
+[
+{
+"ok": true,
+"line": "Off-floor rows excluded (inactive machine-days): 1,018 (expected 1,018..1,018)"
+},
+{
+"ok": true,
+"line": "House win = coin-in - payout on every machine-day (cents off): 0 (expected 0..0)"
+},
+{
+"ok": true,
+"line": "Machine coin-in = property coin-in ($ diff): 0 (expected 0..0.01)"
+},
+{
+"ok": true,
+"line": "DST day has 23 hours: 23 (expected 23..23)"
+},
+{
+"ok": true,
+"line": "GM bottom 10 identical to pipeline: 1 (expected 1..1)"
+},
+{
+"ok": true,
+"line": "GM bottom 10 in Back Forty at period end: 9 (expected 9..9)"
+},
+{
+"ok": true,
+"line": "M-1158 luck z (closed form): -4.57015 (expected -4.57015..-4.57014)"
+},
+{
+"ok": true,
+"line": "M-1158 luck z value: -4.57015 (expected -4.6..-4.5)"
+},
+{
+"ok": true,
+"line": "M-1158 hit-rate z from meters: 124.19 (expected 124..124.5)"
+},
+{
+"ok": true,
+"line": "M-1158 hit-rate z from carded sessions (second table): 103.22 (expected 100..110)"
+},
+{
+"ok": true,
+"line": "Meter integrity: illegal bets, off-increment payouts, coin-in mismatches: 0 (expected 0..0)"
+},
+{
+"ok": true,
+"line": "Sessions audited: 776,297 (expected 776,297..776,297)"
+},
+{
+"ok": true,
+"line": "M-1158 effective RTP: 0.9696 (expected 0.965..0.975)"
+},
+{
+"ok": true,
+"line": "Luck z SD across machines (pure luck ~1): 1.09494 (expected 0.9..1.2)"
+},
+{
+"ok": true,
+"line": "Machines flagged Inspect: 1 (expected 1..1)"
+},
+{
+"ok": true,
+"line": "Machines below 80% of same game in same zone: 0 (expected 0..0)"
+},
+{
+"ok": true,
+"line": "Back Forty zone index: 0.607705 (expected 0.59..0.63)"
+},
+{
+"ok": true,
+"line": "Back Forty vs rest during closure: 0.460953 (expected 0.44..0.48)"
+},
+{
+"ok": true,
+"line": "Walkway effect more extreme than every placebo window: 0 (expected 0..0)"
+},
+{
+"ok": true,
+"line": "Placebo windows tested: 78 (expected 70..90)"
+},
+{
+"ok": true,
+"line": "Downtime share of scheduled hours: 0.00379836 (expected 0.0037..0.0039)"
+},
+{
+"ok": true,
+"line": "Down hours = scheduled - available (raw): 5,021.08 (expected 5,021.07..5,021.09)"
+},
+{
+"ok": true,
+"line": "Selected model is the CV minimum: 1 (expected 1..1)"
+},
+{
+"ok": true,
+"line": "Baseline MAE (constant mean): 218,258 (expected 218,000..218,500)"
+},
+{
+"ok": true,
+"line": "Weekday-mean MAE (independent check vs earlier work): 68,698.6 (expected 68,690..68,710)"
+},
+{
+"ok": true,
+"line": "Selected model MAE: 52,529 (expected 50,000..56,000)"
+},
+{
+"ok": true,
+"line": "Tracked player net ($): -1.55855e+07 (expected -1.55855e+07..-1.55855e+07)"
+},
+{
+"ok": true,
+"line": "Players ahead share: 0.136131 (expected 0.13..0.14)"
+},
+{
+"ok": true,
+"line": "Comp cost total ($): 190,669 (expected 190,669..190,669)"
+},
+{
+"ok": true,
+"line": "Comp cost = ledger economic cost ($ diff): 0 (expected 0..1)"
+},
+{
+"ok": true,
+"line": "Point price change date is 2025-05-01: 1 (expected 1..1)"
+},
+{
+"ok": true,
+"line": "Point price change: -0.559147 (expected -0.6..-0.5)"
+},
+{
+"ok": true,
+"line": "Guide worked example: lease with 14-day lead: 3,380 (expected 3,380..3,380)"
+},
+{
+"ok": true,
+"line": "Top plan cost recomputed from catalog: 38,700 (expected 38,700..38,700)"
+},
+{
+"ok": true,
+"line": "Top plan within budget: 38,700 (expected 0..100,000)"
+},
+{
+"ok": true,
+"line": "Top plan uses at most 3 action types: 3 (expected 0..3)"
+},
+{
+"ok": true,
+"line": "GM plan cost (10 leases): 33,800 (expected 33,800..33,800)"
+},
+{
+"ok": true,
+"line": "Browser data: coin-in total ($ diff): 0 (expected 0..5)"
+},
+{
+"ok": true,
+"line": "Browser data: theo total ($ diff): 3.72529e-09 (expected 0..5)"
+},
+{
+"ok": true,
+"line": "Point price roughly halves within every tier: 0.470726 (expected 0.4..0.5)"
+}
+]

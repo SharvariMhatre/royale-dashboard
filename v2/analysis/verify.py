@@ -85,6 +85,11 @@ fl = json.loads((OUT / "floor.json").read_text())["floor"]
 check("Browser data: coin-in total ($ diff)", abs(sum(fl["ci"]) - v(f"SELECT sum(coin_in_cents)/100 FROM {MD} WHERE active")), 0, 5)
 check("Browser data: theo total ($ diff)", abs(sum(fl["th"]) - v(f"SELECT sum(theo_cents)/100 FROM {MD} WHERE active")), 0, 5)
 
+check("Point price roughly halves within every tier", v(f"""SELECT max(r) FROM (SELECT tier_before,
+    (sum(-points_delta) FILTER (WHERE event_at_utc >= '2025-05-01 13:00') / sum(face_value_cents) FILTER (WHERE event_at_utc >= '2025-05-01 13:00'))
+    / (sum(-points_delta) FILTER (WHERE event_at_utc < '2025-05-01 13:00') / sum(face_value_cents) FILTER (WHERE event_at_utc < '2025-05-01 13:00')) AS r
+    FROM {LED} WHERE event_type='redeem' AND event_at_utc < '2025-07-01 13:00' GROUP BY 1)"""), 0.4, 0.5)
+(OUT / "checks.json").write_text(json.dumps([{"ok": ok, "line": line[6:]} for ok, line in results], indent=0))
 for ok, line in results:
     print(line)
 bad = sum(not ok for ok, _ in results)
