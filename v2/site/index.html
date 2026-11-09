@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gilded Ace Floor Review</title>
+<meta name="description" content="Luck, location, or a leak? A floor review of The Gilded Ace's 10 lowest-earning slot machines, Jan to Jun 2025 (synthetic data).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script defer src="app.js"></script>
+<script src="ask-config.js"></script>
+<script defer src="ask.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><b>Gilded Ace floor review</b><span>310 slot machines, Jan 1 to Jun 30, 2025. Synthetic data.</span></div>
+    <div class="f"><span id="lbl-period">Period</span>
+      <div class="presets" role="group" aria-labelledby="lbl-period">
+        <button data-p="H1" aria-pressed="true">Jan to Jun</button><button data-p="Q1" aria-pressed="false">Jan to Mar</button><button data-p="Q2" aria-pressed="false">Apr to Jun</button><button data-p="CL" aria-pressed="false">Closure</button>
+      </div></div>
+    <label class="f">From<select id="from"></select></label>
+    <label class="f">To<select id="to"></select></label>
+    <label class="f">Zone<select id="zone"></select></label>
+    <label class="f">Bank<select id="bank"></select></label>
+    <label class="f">Guest tier<select id="tier"><option value="all">All tiers</option></select></label>
+    <label class="f">Age<select id="age"><option value="all">All ages</option></select></label>
+    <label class="f">Region<select id="region"><option value="all">All regions</option></select></label>
+    <button class="btn" id="reset">Reset</button>
+    <button class="btn primary" id="tour-start">Judge tour</button>
+    <button class="btn" id="ask-open">Ask the floor</button>
+  </div>
+  <div class="scope" id="scope" aria-live="polite"></div>
+</header>
+
+<div class="wrap">
+  <nav class="rail" aria-label="Questions">
+    <ol>
+      <li><a href="#answer" data-tab="answer"><span>&nbsp;</span>The answer</a></li>
+      <li><a href="#machines" data-tab="machines"><span>Q1</span>Machines</a></li>
+      <li><a href="#demand" data-tab="demand"><span>Q2</span>Demand and the walkway</a></li>
+      <li><a href="#downtime" data-tab="downtime"><span>Q3</span>Downtime</a></li>
+      <li><a href="#guests" data-tab="guests"><span>Q4-5</span>Players and comps</a></li>
+      <li><a href="#forecast" data-tab="forecast"><span>Model</span>Forecast and validation</a></li>
+      <li><a href="#plan" data-tab="plan"><span>Q6</span>The $100,000 plan</a></li>
+      <li><a href="#evidence" data-tab="evidence"><span>&nbsp;</span>Claims and evidence</a></li>
+    </ol>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <section id="s-answer" aria-labelledby="h-answer">
+      <h1 class="lede" id="h-answer">Don't replace the ten. Fix the spot and inspect one machine.</h1>
+      <div class="grid2">
+        <div>
+          <p class="sub" id="answer-sub"></p>
+          <ul class="causes" id="causes"></ul>
+          <div class="kpis" id="kpis"></div>
+        </div>
+        <div>
+          <div class="plan-wrap" id="answer-plan-wrap">
+            <div id="floorplan"></div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <p class="cap small muted">Each dot is a slot position at its surveyed floor coordinates, coloured by our verdict for the period you picked. Rings mark the GM's ten. Click a dot to open that machine.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="s-machines" aria-labelledby="h-machines">
+      <h2 id="h-machines">Which machines truly underperform?</h2>
+      <p class="sub" id="machines-sub"></p>
+      <div class="panel" id="gm10-panel"><h3>The GM's ten, judged fairly</h3><div class="tbl" id="gm10"></div>
+        <p class="cap">Ranked by house win, as the GM did. Each row is tested against luck (closed-form z), how often it pays (hit-rate z), time on the floor, the same game in the same zone, and its zone.</p></div>
+      <div class="grid-eq">
+        <div class="panel" id="mech-panel"><h3>M-1158 pays more often, but less each time</h3><div id="mech-chart"></div><div id="mech-text" class="cap"></div></div>
+        <div class="panel"><h3>Same slot, new machine: nothing changed</h3><div id="slot-chart"></div><div id="slot-text" class="cap"></div></div>
+      </div>
+      <div class="panel"><h3>Every machine in scope</h3><div class="tbl" id="all-machines"></div></div>
+    </section>
+
+    <section id="s-demand" aria-labelledby="h-demand">
+      <h2 id="h-demand">What changed in demand, and why?</h2>
+      <p class="sub" id="demand-sub"></p>
+      <div class="panel" id="walk-panel"><h3>Back Forty lost a third of its play when its walkway closed</h3><div id="walk-chart"></div><div class="cap" id="walk-text"></div></div>
+      <div class="grid-eq">
+        <div class="panel"><h3>The closure against 78 fake closures</h3><div id="placebo-chart"></div><div class="cap" id="placebo-text"></div></div>
+        <div class="panel"><h3>Floor coin-in by day</h3><div id="daily-chart"></div><div class="cap" id="daily-text"></div></div>
+      </div>
+      <div class="panel"><h3>Watch the floor month by month</h3><div id="floorplan-month"></div>
+        <div class="scrub"><label for="month-scrub">Month</label><input type="range" id="month-scrub" min="0" max="5" value="2"><output id="month-out"></output></div>
+        <p class="cap">Dots coloured by expected win per available hour in that month (darker is higher). The dashed line is the Main Entrance to Back Forty walkway, closed Mar 3 to Apr 6.</p></div>
+    </section>
+
+    <section id="s-downtime" aria-labelledby="h-downtime">
+      <h2 id="h-downtime">How much play was lost to downtime, and when?</h2>
+      <p class="sub" id="downtime-sub"></p>
+      <div class="kpis" id="dt-kpis"></div>
+      <div class="grid-eq">
+        <div class="panel"><h3>Lost expected win by month</h3><div id="dt-month"></div></div>
+        <div class="panel"><h3>Down share by manufacturer</h3><div id="dt-mfr"></div></div>
+      </div>
+      <div class="panel"><h3>Repairs and technician staffing</h3><div id="dt-staff"></div><div class="cap" id="dt-staff-text"></div></div>
+    </section>
+
+    <section id="s-guests" aria-labelledby="h-guests">
+      <h2 id="h-guests">What did tracked players wager, get back and net?</h2>
+      <p class="sub" id="guests-sub"></p>
+      <div class="kpis" id="g-kpis"></div>
+      <div class="grid-eq">
+        <div class="panel"><h3>How concentrated are results?</h3><div class="kpis" id="g-conc"></div><div class="cap" id="g-conc-text"></div></div>
+        <div class="panel"><h3>The comp price changed on May 1</h3><div id="comp-chart"></div><div class="cap" id="comp-text"></div></div>
+      </div>
+      <div class="panel"><h3>Comp cost as a share of expected win</h3><div id="comp-month"></div></div>
+    </section>
+
+    <section id="s-forecast" aria-labelledby="h-forecast">
+      <h2 id="h-forecast">Forecast and how it was validated</h2>
+      <p class="sub" id="forecast-sub"></p>
+      <div class="grid-eq">
+        <div class="panel" id="cv-panel"><h3>Model chosen on Jan to Apr only</h3><div id="cv-table"></div><p class="cap">Rolling origins: fit on all days before each origin, forecast the next 14 days. The May to June test was run once, after the choice.</p></div>
+        <div class="panel"><h3>What the forecast changes</h3><div id="forecast-decision"></div></div>
+      </div>
+      <div class="panel"><h3>May to June: forecast against what happened</h3><div id="test-chart"></div><div class="cap" id="test-text"></div></div>
+    </section>
+
+    <section id="s-plan" aria-labelledby="h-plan">
+      <h2 id="h-plan">Spend $38,700, keep $61,300</h2>
+      <p class="sub" id="plan-sub"></p>
+      <div class="actions" id="actions"></div>
+      <div class="grid-eq" style="margin-top:24px">
+        <div class="panel"><h3>Every legal plan, scored</h3><div id="plans-chart"></div><div class="cap" id="plans-text"></div></div>
+        <div class="panel" id="builder-panel"><h3>Build your own plan</h3><div class="builder" id="builder"></div><div class="result" id="builder-out" aria-live="polite"></div></div>
+      </div>
+    </section>
+
+    <section id="s-evidence" aria-labelledby="h-evidence">
+      <h2 id="h-evidence">Claims and evidence</h2>
+      <p class="sub">Every number on this page comes from the data files and is re-derived by <code>v2/analysis/verify.py</code>, which fails if any differ.</p>
+      <div class="panel"><div class="tbl" style="max-height:none" id="claims"></div></div>
+      <div class="panel"><h3 id="checks-h"></h3><div class="tbl" id="checks"></div></div>
+    </section>
+  </main>
+</div>
+
+<dialog id="machine-dlg" aria-labelledby="dlg-title">
+  <div class="dlg-h"><h3 id="dlg-title"></h3><button class="btn" id="dlg-close">Close</button></div>
+  <div class="dlg-b" id="dlg-body"></div>
+</dialog>
+<div class="tour" id="tour" hidden role="dialog" aria-labelledby="tour-h">
+  <h3 id="tour-h"></h3><p id="tour-p"></p>
+  <div class="row"><span id="tour-n" class="small"></span><span><button class="btn" id="tour-skip">End tour</button> <button class="btn primary" id="tour-next">Next</button></span></div>
+</div>
+<aside class="ask" id="ask" hidden aria-labelledby="ask-h">
+  <header><h3 id="ask-h">Ask the floor</h3><button class="btn" id="ask-close">Close</button></header>
+  <div class="log" id="ask-log" aria-live="polite"></div>
+  <div class="sugg" id="ask-sugg"></div>
+  <form id="ask-form"><label for="ask-in" class="small" hidden>Question</label><input id="ask-in" placeholder="Why is M-1158 on the GM's list?" autocomplete="off"><button class="btn primary">Ask</button></form>
+</aside>
+</body>
+</html>

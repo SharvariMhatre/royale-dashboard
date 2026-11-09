@@ -1,0 +1,122 @@
+[
+ {
+  "id": "C1",
+  "q": "Q1",
+  "claim": "None of the GM's 10 is a weak machine: 7 sit in a bad spot, 2 had short time on the floor, 1 needs inspection.",
+  "evidence": "analysis/q1_machines.py: verdict() over floor (machine_day joined to prepared_daily_view, active rows)",
+  "result": "All 310 machines earn at least 0.84x the same game in the same zone (leave-one-out).",
+  "alternative": "The machines are simply bad games. Tested: compared with the same game in the same zone on the same days, excluding the machine itself.",
+  "limitation": "Verdict thresholds (0.8, 0.85, 120 days, |z| > 3.29) are our choices; the dashboard recomputes them for any period.",
+  "tab": "machines"
+ },
+ {
+  "id": "C2",
+  "q": "Q1",
+  "claim": "M-1158 pays more often but smaller: hit rate 38.6% vs 31.5% configured, award per hit 2.50x vs 2.85x for the same game elsewhere. Effective return 97.0% vs 90% configured.",
+  "evidence": "analysis/q1_machines.py: mechanism(); sessions + game_math",
+  "result": "Hit-rate z = 124 in meters and 103 in carded sessions; luck z = -4.57. Present at every bet level, every month, carded (2.4% hold) and uncarded (4.3%).",
+  "alternative": "Bad luck or a metering fault. Luck: the hit test ignores award size, and z = 124 is not luck. Metering: all 776,297 sessions use legal bets, every payout is a multiple of the game's increment, coin-in = bet x spins on every session.",
+  "limitation": "Data can't say why the paytable differs. This is a lead to inspect, never an accusation.",
+  "tab": "machines"
+ },
+ {
+  "id": "C3",
+  "q": "Q2",
+  "claim": "Back Forty's spot is the cause: it earns 0.61x what its game mix earns elsewhere, and fell from 67% to 46% of the rest of the floor while its walkway was closed (Mar 3 to Apr 6), recovering to 64%.",
+  "evidence": "analysis/q2_q3_demand_downtime.py: walkway(); floor_walkways, zone_traffic_hourly",
+  "result": "The closure effect is more extreme than all 78 placebo windows of the same length. Back Forty entries per counter-hour: 25.19 before, 17.62 during.",
+  "alternative": "A floor-wide dip in March. Tested: the effect is measured against the rest of the floor on the same days, and fake closure dates never come close.",
+  "limitation": "One closure; the size of the effect may not transfer to a signage change.",
+  "tab": "demand"
+ },
+ {
+  "id": "C4",
+  "q": "Q1",
+  "claim": "Replacing a machine in the same slot didn't fix the slot: M-5076 replaced M-1120 at L-38-5 on May 13 and earned $6.39 of expected win per hour vs $6.00 before, still about a third of the floor rate.",
+  "evidence": "analysis/q1_machines.py: swaps_and_moves(); placements",
+  "result": "Theo per available hour 6.00 -> 6.39; floor 18.08 -> 17.36. Both machines are on the GM's list.",
+  "alternative": "The new machine needed time to build play. Limitation acknowledged: 49 days after the swap.",
+  "limitation": "One swap, same game title.",
+  "tab": "machines"
+ },
+ {
+  "id": "C5",
+  "q": "Q1",
+  "claim": "Moving a machine out of Back Forty doubled its expected win: M-1152 earned $14.26/h in Back Forty and $29.35/h at Main Entrance.",
+  "evidence": "analysis/q1_machines.py: swaps_and_moves()",
+  "result": "2.06x after the Feb 4 move.",
+  "alternative": "Some of the new play was taken from neighbours. That is why the plan search assumes 30-80% displacement.",
+  "limitation": "One machine; 34 days before the move.",
+  "tab": "machines"
+ },
+ {
+  "id": "C6",
+  "q": "Q3",
+  "claim": "Downtime is small: 0.38% of scheduled hours, at most $96,445 of expected win in six months.",
+  "evidence": "analysis/q2_q3_demand_downtime.py: downtime()",
+  "result": "5,021 down hours; Ridgeline machines are down 2-3x as often as others; slot-tech headcount fell short of plan in April and May.",
+  "alternative": "Lost play is all lost revenue. It is an upper bound: players can move to a nearby machine.",
+  "limitation": "Valued at the zone's expected win per hour that day.",
+  "tab": "downtime"
+ },
+ {
+  "id": "C7",
+  "q": "Q2",
+  "claim": "Demand dipped in June: weekday-adjusted coin-in was -4.3% vs the Jan-Apr norm.",
+  "evidence": "analysis/q2_q3_demand_downtime.py: demand()",
+  "result": "Las Vegas visitors were -11.3% year over year in June (LVCVA, context only).",
+  "alternative": "A property-specific problem. The citywide fall points to tourism; it is context, never a model input.",
+  "limitation": "LVCVA covers all Las Vegas visitors, not this casino's guests.",
+  "tab": "demand"
+ },
+ {
+  "id": "C8",
+  "q": "Q4",
+  "claim": "Tracked players wagered $163,804,870 and lost $15,585,461; 13.6% finished ahead.",
+  "evidence": "analysis/q4_q5_guests.py: concentration(); player_period",
+  "result": "Top 10% of players account for 59% of losses; top 1% place 23% of wagers.",
+  "alternative": "Results are luck. Tracked net is within 1% of theo across the group.",
+  "limitation": "Carded play only. Concentration is shown to protect heavy losers, never to target them.",
+  "tab": "guests"
+ },
+ {
+  "id": "C9",
+  "q": "Q5",
+  "claim": "On 2025-05-01 the points needed per $1 of comps fell 56% (13.1 to 5.8). Comp cost rose from 0.73% to 0.88% of theo.",
+  "evidence": "analysis/q4_q5_guests.py: comps(); loyalty_ledger (change point scan on the daily series)",
+  "result": "Comp cost $190,669 in six months, counted once (already inside POS cogs).",
+  "alternative": "A shift in which tiers redeem. Tested: the price roughly halved within every tier on the same day (Base 15.0 to 7.0, Gold 12.0 to 5.6, Platinum 9.0 to 4.2 points per $1).",
+  "limitation": "We can't see whether the change was intended.",
+  "tab": "guests"
+ },
+ {
+  "id": "C10",
+  "q": "Model",
+  "claim": "A gradient boosting forecast, chosen by rolling-origin CV inside Jan-Apr, scored $52,529/day MAE on May-Jun vs $218,258 for the constant baseline.",
+  "evidence": "analysis/model.py",
+  "result": "80% band +/-$67,647 covered 75% of test days (under-covers; reported as is).",
+  "alternative": "A simpler model is as good. Weekday mean scored $68,699; selection used CV only, the test was touched once.",
+  "limitation": "Events count only if announced before the forecast date; June over-forecast because of the tourism dip.",
+  "tab": "forecast"
+ },
+ {
+  "id": "C11",
+  "q": "Q6",
+  "claim": "Of 530 legal plans, the best spends $38,700 and keeps $61,300: expected net $32,066, gain in 94% of 4,000 simulations.",
+  "evidence": "analysis/plan.py: every legal combination (<= 3 types, <= $100K, limits, comp rules)",
+  "result": "The GM's plan (lease 10 replacements, $33,800) ranks 466 of 530, expected net -$32,265, gain in 0% of runs.",
+  "alternative": "Keep the whole budget (rank shown in the search).",
+  "limitation": "Effects are assumption ranges grounded in this data, listed per action.",
+  "tab": "plan"
+ },
+ {
+  "id": "C12",
+  "q": "Q6",
+  "claim": "Past promotions worked: the Winter Slot Tournament added 11.9% coin-in and Locals Week 4.1%, both above every one of 91 placebo windows.",
+  "evidence": "analysis/plan.py: facts(); events, floor",
+  "result": "About $11,975 extra theo per promotion day; placebo spread $3,872/day.",
+  "alternative": "The lift is chance. The same estimator on non-event windows never reaches it.",
+  "limitation": "Two promotions; July may be softer, so the plan scales lift to 50-100%.",
+  "tab": "plan"
+ }
+]
